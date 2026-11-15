@@ -321,8 +321,8 @@ function addBeauty(){
  S.custom.push({id:uid(),title:'💅 '+t,date,time});
  save();render();toast('Запись добавлена в «Красота и уход»');
 }
-function editBeautyTitle(id,value){
- const rec=S.custom.find(x=>String(x.id)===String(id));if(!rec)return;
+function editBeautyTitle(index,value){
+ const rec=S.custom[index];if(!rec)return;
  rec.title='💅 '+value.trim();save();
 }
 function vBeauty(){
@@ -332,7 +332,7 @@ function vBeauty(){
  const legacy=S.docs.map((x,i)=>({x,i})).filter(({x})=>x.type==='Красота');
  if(!events.length&&!legacy.length)out+='<p class="mut">Пока нет записей. Можно добавить вручную или продиктовать: «Завтра в 15:00 маникюр».</p>';
  events.forEach(({x,i})=>{
-   out+='<div class="row"><div class="txt"><input aria-label="Процедура" value="'+safe((x.title||'').replace(/^💅\s*/,''))+'" onchange="editBeautyTitle('+JSON.stringify(String(x.id))+',this.value)">';
+   out+='<div class="row"><div class="txt"><input aria-label="Процедура" value="'+safe((x.title||'').replace(/^💅\s*/,''))+'" onchange="editBeautyTitle('+i+',this.value)">';
    out+='<div class="meta"><input aria-label="Дата" type="date" value="'+safe(x.date||'')+'" onchange="edit(\'custom\','+i+',\'date\',this.value)"><input aria-label="Время" type="time" value="'+safe(x.time||'')+'" onchange="edit(\'custom\','+i+',\'time\',this.value)"></div></div><button class="del" onclick="del(\'custom\','+i+')">✕</button></div>';
  });
  legacy.forEach(({x,i})=>{
