@@ -891,7 +891,7 @@ function v6FreeTimeCandidates(){
   if(!opts.includeFuture&&due&&due>today)return;
   records.push({id:String(x.id),key,title:String(x.t),category,focus,minutes:Math.max(5,Math.round(duration)),due,priority:x.priority||'обычно',source:x});
  };
- (S.inbox||[]).forEach(x=>add('inbox',x,x.category||'Личное',/Академия семьи|Детская афиша|Мама-юрист|Учёба/.test(x.category||'')?'Мои проекты':/Дом|Покупки|Садик|Малышка/.test(x.category||'')?'Дом и семья': 'Для себя',20,{includeFuture:true}));
+ (S.inbox||[]).forEach(x=>add('inbox',x,x.category||'Личное',/Академия семьи|Детская афиша|Мама-юрист|Учёба|Цифровая колыбель|Бизнес-лаборатория|БАНКРОЛОТ/.test(x.category||'')?'Мои проекты':/Дом|Покупки|Садик|Малышка/.test(x.category||'')?'Дом и семья': 'Для себя',20,{includeFuture:true}));
  (S.calls||[]).forEach(x=>add('calls',x,'Звонки','Дом и семья',10,{sampleKey:'calls',includeFuture:true}));
  (S.kind||[]).forEach(x=>add('kind',x,'Садик','Дом и семья',15,{sampleKey:'kind',includeFuture:true}));
  (S.buys||[]).forEach(x=>add('buys',x,'Покупки','Дом и семья',10,{sampleKey:'buys',includeFuture:true}));
@@ -1000,7 +1000,7 @@ renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':
 })();
 // Offline app shell cache, only available when served from HTTPS/localhost.
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  const freshVersion='2026-11-15-free-time-v5';
+  const freshVersion='2026-11-16-dialog-review-v6';
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(sessionStorage.getItem('olga-sw-reloaded')!==freshVersion){
       sessionStorage.setItem('olga-sw-reloaded',freshVersion);
