@@ -576,6 +576,14 @@ function ensureMamaLawyerAcademyTalk(){
  save();
 }
 ensureMamaLawyerAcademyTalk();
+function ensureAfishaGiveawayReminder(){
+ if(!Array.isArray(S.inbox))return;
+ const id='afisha-vmeste-giveaway-2026-11-18';
+ if(S.inbox.some(x=>x.id===id || (/розыгрыш/i.test(x.t||'')&&/Вместе|перья птиц/i.test(x.t||'')&&x.due==='2026-11-18')))return;
+ S.inbox.push({id,t:'Детская афиша × Семейный центр «Вместе»: проверить участников розыгрыша (подписки, лайк, репост, комментарий «Хочу на занятие!», открытые страницы) и в 19:00 случайным образом выбрать победителя. Подготовить объявление победителя. Приз: занятие «Чудесные перья птиц», 21 ноября в 14:00, 8+.',done:0,due:'2026-11-18',category:'Детская афиша',priority:'срочно',minutes:30,added:'2026-11-15'});
+ save();
+}
+ensureAfishaGiveawayReminder();
 function vCourses(){let out='<div class="card"><h3>🎓 Мои курсы</h3><p class="mut">Каждый курс имеет свою кнопку перехода. Ссылки не дублируются.</p></div>';
  COURSES.forEach((c,ci)=>{if(c.o==='ТГУ'&& !COURSES.slice(0,ci).some(p=>p.o==='ТГУ'))out+='<div class="card"><h3>⚠ ТГУ — требуется исправить документы</h3><p>Ранее загруженные документы не соответствуют требованиям организации. В <a href="https://lk.flow-crm.study/" target="_blank" rel="noopener noreferrer">личном кабинете ТГУ</a> проверь комментарий к каждому отклонённому документу, исправь замечания и загрузи обновлённые версии.</p><p class="mut">Это отдельная незавершённая задача в разделе «Мои задачи». Отправка подписанных оригиналов почтой — другое дело, оно остаётся в списке.</p></div>';if(!S.steps[c.n])S.steps[c.n]=c.s.map(()=>0);const progress=S.steps[c.n],done=progress.filter(Boolean).length;out+='<div class="card"><h3>'+safe(c.n)+'</h3>'+(c.completed?'<div class="tag" style="display:inline-block;margin:3px 0 7px;background:#e3f4e6;color:#265c34;font-weight:700">✅ Курс пройден</div>':'')+'<div class="mut">'+safe(c.o)+'</div>'+(c.n.startsWith('Креативный код:')?'<div class="mut">Занятия уже в календаре: 18.11, 25.11, 02.12, 09.12. Ссылку с персональным кодом сохрани в поле ниже — она будет храниться только в этом браузере.</div>':'')+(c.url&&c.o!=='ТГУ'?'<div style="margin:9px 0"><a class="btn g" href="'+safe(c.url)+'" target="_blank" rel="noopener noreferrer">↗ Открыть курс</a></div>':'')+(c.dl&&!c.completed?'<div class="mut">'+(dLeft(c.dl)<0?'Срок прошёл':'До '+nice(c.dl))+'</div>':'')+(!c.url?linkEditor(linkKeyCourse(ci),'link_course_'+ci):'')+'<div class="prog"><i style="width:'+(100*done/Math.max(1,c.s.length))+'%"></i></div><div class="mut">'+done+' из '+c.s.length+'</div>';
  c.s.forEach((st,si)=>out+='<div class="row"><input type="checkbox" '+(progress[si]?'checked':'')+' onchange="toggleSteps('+ci+','+si+')"><div class="txt"><input value="'+safe(st)+'" onchange="renStep('+ci+','+si+',this.value)"></div><button class="del" onclick="deleteStep('+ci+','+si+')">✕</button></div>');
