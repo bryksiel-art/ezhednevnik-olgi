@@ -212,7 +212,7 @@ function seed(){
 seed();
 
 /* ===== TABS ===== */
-const TABS=[['home','🏠','Мой день'],['week','🗓️','Неделя'],['routines','🔁','Рутины'],['assistant','✨','Помощник'],['inbox','⚡','Быстро записать'],['cal','📅','Календарь'],['courses','🎓','Курсы'],['social','📣','Соцсети'],['dr','🎂','ДР'],['doc','🩺','Врачи и записи'],['kind','👧','Садик'],['buy','🛍','Покупки'],['food','🥦','Продукты'],['gift','🎁','Подарки'],['fest','🎄','Праздники'],['estate','🏡','Недвижимость'],['call','📞','Звонки'],['notes','📝','Заметки'],['settings','💾','Мои данные']];
+const TABS=[['home','🏠','Мой день'],['week','🗓️','Неделя'],['routines','🔁','Рутины'],['assistant','✨','Помощник'],['inbox','⚡','Быстро записать'],['cal','📅','Календарь'],['courses','🎓','Курсы'],['social','📣','Соцсети'],['dr','🎂','ДР'],['doc','🩺','Врачи и записи'],['beauty','💅','Красота и уход'],['kind','👧','Садик'],['buy','🛍','Покупки'],['food','🥦','Продукты'],['gift','🎁','Подарки'],['fest','🎄','Праздники'],['estate','🏡','Недвижимость'],['call','📞','Звонки'],['notes','📝','Заметки'],['settings','💾','Мои данные']];
 let cur='home';
 const PRIMARY=['home','week','assistant','inbox','cal'];
 function primaryButton(id,bottom=false){const t=TABS.find(x=>x[0]===id);if(!t)return'';return '<button class="'+(cur===id?'on':'')+'" aria-current="'+(cur===id?'page':'false')+'" onclick="go(\''+id+'\')"><span class="nav-icon">'+t[1]+'</span><span>'+({home:'День',inbox:'Записать',cal:'Календарь'}[id]||t[2])+'</span></button>'}
@@ -306,11 +306,41 @@ function addDr(){const n=document.getElementById('dr_n').value.trim(),d=document
 
 /* ===== ВРАЧИ И ЗАПИСИ ===== */
 function vDoc(){
- let out='<div class="card"><h3>🩺 Врачи, маникюр, красота</h3><div class="frm"><input type="text" id="dc_t" placeholder="Что и к кому"><select id="dc_type" style="flex:0 0 40%"><option>Малышка</option><option>Себе</option><option>Красота</option></select><input type="date" id="dc_d" aria-label="Дата записи"><input type="time" id="dc_time" aria-label="Время записи"><button class="add" onclick="addDoc()">＋ Добавить</button></div><div class="mut">При указании времени приложение напомнит за день, за 2 часа и за 30 минут — когда эта страница открыта.</div>';
- S.docs.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'docs\','+i+')"><div class="txt"><input value="'+safe(x.t)+'" onchange="edit(\'docs\','+i+',\'t\',this.value)"><div class="sub"><input class="in-sub" value="'+safe(x.sub||'')+'" placeholder="адрес, что взять" onchange="edit(\'docs\','+i+',\'sub\',this.value)"></div><div class="meta"><input type="date" aria-label="Дата" value="'+safe(x.date||'')+'" onchange="edit(\'docs\','+i+',\'date\',this.value);render()"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="edit(\'docs\','+i+',\'time\',this.value);render()"></div><span class="tag '+({Себе:'b',Малышка:'p',Красота:'y'})[x.type||'Себе']+'">'+safe(x.type||'Себе')+'</span></div><button class="del" onclick="del(\'docs\','+i+')">✕</button></div>'});
+ let out='<div class="card"><h3>🩺 Врачи и медицинские записи</h3><div class="frm"><input type="text" id="dc_t" placeholder="Что и к кому"><select id="dc_type" style="flex:0 0 40%"><option>Малышка</option><option>Себе</option></select><input type="date" id="dc_d" aria-label="Дата записи"><input type="time" id="dc_time" aria-label="Время записи"><button class="add" onclick="addDoc()">＋ Добавить</button></div><div class="mut">При указании времени приложение напомнит за день, за 2 часа и за 30 минут — когда эта страница открыта.</div>';
+ S.docs.forEach((x,i)=>{if(x.type==='Красота')return;out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'docs\','+i+')"><div class="txt"><input value="'+safe(x.t)+'" onchange="edit(\'docs\','+i+',\'t\',this.value)"><div class="sub"><input class="in-sub" value="'+safe(x.sub||'')+'" placeholder="адрес, что взять" onchange="edit(\'docs\','+i+',\'sub\',this.value)"></div><div class="meta"><input type="date" aria-label="Дата" value="'+safe(x.date||'')+'" onchange="edit(\'docs\','+i+',\'date\',this.value);render()"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="edit(\'docs\','+i+',\'time\',this.value);render()"></div><span class="tag '+({Себе:'b',Малышка:'p',Красота:'y'})[x.type||'Себе']+'">'+safe(x.type||'Себе')+'</span></div><button class="del" onclick="del(\'docs\','+i+')">✕</button></div>'});
  return out+'</div>';
 }
 function addDoc(){const t=document.getElementById('dc_t').value.trim();if(!t){toast('Напишите, что за запись');return}S.docs.push({id:uid(),done:0,t,sub:'',type:document.getElementById('dc_type').value,date:document.getElementById('dc_d').value,time:document.getElementById('dc_time').value});save();render();toast('Запись добавлена')}
+
+
+/* ===== КРАСОТА И УХОД ===== */
+function addBeauty(){
+ const t=document.getElementById('beauty_t').value.trim(),date=document.getElementById('beauty_d').value,time=document.getElementById('beauty_time').value;
+ if(!t){toast('Укажи процедуру или мастера');return}
+ // Keep beauty appointments in calendar store for reminders and day/week views.
+ S.custom.push({id:uid(),title:'💅 '+t,date,time});
+ save();render();toast('Запись добавлена в «Красота и уход»');
+}
+function editBeautyTitle(id,value){
+ const rec=S.custom.find(x=>String(x.id)===String(id));if(!rec)return;
+ rec.title='💅 '+value.trim();save();
+}
+function vBeauty(){
+ let out='<div class="card"><h3>💅 Красота и уход</h3><div class="mut">Маникюр, педикюр, стрижка, окрашивание, брови и другие процедуры. Записи с датой также видны в календаре.</div>';
+ out+='<div class="frm"><input type="text" id="beauty_t" placeholder="Процедура, мастер или салон"><input type="date" id="beauty_d" aria-label="Дата процедуры"><input type="time" id="beauty_time" aria-label="Время процедуры"><button class="add" onclick="addBeauty()">＋ Добавить</button></div>';
+ const events=S.custom.map((x,i)=>({x,i})).filter(({x})=>/^💅\s*/.test(x.title||'')).sort((a,b)=>(a.x.date||'').localeCompare(b.x.date||''));
+ const legacy=S.docs.map((x,i)=>({x,i})).filter(({x})=>x.type==='Красота');
+ if(!events.length&&!legacy.length)out+='<p class="mut">Пока нет записей. Можно добавить вручную или продиктовать: «Завтра в 15:00 маникюр».</p>';
+ events.forEach(({x,i})=>{
+   out+='<div class="row"><div class="txt"><input aria-label="Процедура" value="'+safe((x.title||'').replace(/^💅\s*/,''))+'" onchange="editBeautyTitle('+JSON.stringify(String(x.id))+',this.value)">';
+   out+='<div class="meta"><input aria-label="Дата" type="date" value="'+safe(x.date||'')+'" onchange="edit(\'custom\','+i+',\'date\',this.value)"><input aria-label="Время" type="time" value="'+safe(x.time||'')+'" onchange="edit(\'custom\','+i+',\'time\',this.value)"></div></div><button class="del" onclick="del(\'custom\','+i+')">✕</button></div>';
+ });
+ legacy.forEach(({x,i})=>{
+   out+='<div class="row'+(x.done?' done':'')+'"><input aria-label="Выполнено" type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'docs\','+i+')"><div class="txt"><input value="'+safe(x.t||'')+'" onchange="edit(\'docs\','+i+',\'t\',this.value)">';
+   out+='<div class="meta"><input type="date" aria-label="Дата" value="'+safe(x.date||'')+'" onchange="edit(\'docs\','+i+',\'date\',this.value)"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="edit(\'docs\','+i+',\'time\',this.value)"></div><span class="tag y">Ранее сохранено</span></div><button class="del" onclick="del(\'docs\','+i+')">✕</button></div>';
+ });
+ return out+'</div>';
+}
 
 /* ===== САДИК ===== */
 function vKind(){let out='<div class="card"><h3>👧 Детский сад</h3><div class="frm"><input type="text" id="kd_t" placeholder="Дело по садику"><input type="date" id="kd_d" style="flex:0 0 40%"><button class="add" onclick="addSimple(\'kind\',[\'kd_t\'],{sub:[\'kd_d\',\'date\']})">＋</button></div>';
@@ -694,7 +724,7 @@ function v6assistant(){const draft=S.v6.captureDraft,cat=['Все','Личное
  S.v6.holidays.forEach(h=>{out+='<div class="v6draft"><div class="v6flex"><div><b>'+safe(h.name)+'</b><div class="v6mut">'+safe(nice(h.date))+' · '+safe(V6_HOLIDAY_TYPES[h.type]?.title||'Праздник')+'</div></div><button class="v6btn warn" onclick="v6holidayRemove(\''+h.id+'\')">Удалить</button></div>';h.tasks.forEach(t=>out+='<div class="v6line"><label><input type="checkbox" '+(t.include?'checked':'')+' onchange="v6holidayEdit(\''+h.id+'\',\''+t.id+'\',\'include\',this.checked)"> '+safe(t.t)+'</label><div class="v6mut">'+safe(nice(v6holidayDue(h.date,Number(t.offset))))+' ('+(Number(t.offset)<=0?Math.abs(Number(t.offset))+' дн. до праздника':'после')+')</div></div>');out+='<div class="v6field"><button class="v6btn primary" onclick="v6holidayPublish(\''+h.id+'\')">＋ Добавить выбранные этапы в задачи</button></div></div>'});return out+'</section>'}
 function v6home(){const initial=v5home();const suggestions=v6suggestedTasks().slice(0,3);const part='<div class="card"><h3>✨ Помощник дня</h3><p class="mut">Свободные 25 минут? Помощник подберёт дела из твоего списка. Здесь отображаются несколько текущих вариантов.</p>'+suggestions.map(x=>'<div class="v6line">'+safe(x.t)+' <span class="v6mut">· '+(Number(x.minutes)||15)+' мин</span></div>').join('')+'<button class="v6btn" onclick="go(\'assistant\')">🎤 Голос, время и праздники</button></div>';return part+initial}
 
-const VIEWS={home:v6home,assistant:v6assistant,week:v5week,routines:v5routines,inbox:vInbox,settings:vSettings,cal:vCalPlus,courses:vCourses,social:v5social,dr:vDr,doc:vDoc,kind:vKind,buy:v5orders,food:v5food,gift:vGift,fest:vFest,estate:vEstate,call:vCall,notes:vNotes};
+const VIEWS={home:v6home,assistant:v6assistant,week:v5week,routines:v5routines,inbox:vInbox,settings:vSettings,cal:vCalPlus,courses:vCourses,social:v5social,dr:vDr,doc:vDoc,beauty:vBeauty,kind:vKind,buy:v5orders,food:v5food,gift:vGift,fest:vFest,estate:vEstate,call:vCall,notes:vNotes};
 function bellToggle(){S.bell=S.bell?0:1;save();const el=document.getElementById('bell');if(el){el.textContent=S.bell?'🔔':'🔕';el.setAttribute('aria-label',S.bell?'Выключить уведомления':'Включить уведомления')}if(!S.bell)document.getElementById('reminderPanel')?.remove();else remind()}
 const n0=new Date();document.getElementById('hdrdate').textContent=nice(iso(n0));
 renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':'🔕';remind();
