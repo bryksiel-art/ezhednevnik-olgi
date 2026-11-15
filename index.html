@@ -901,7 +901,7 @@ renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':
 })();
 // Offline app shell cache, only available when served from HTTPS/localhost.
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  const freshVersion='2026-11-15-tasks-v3';
+  const freshVersion='2026-11-15-integrity-v4';
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(sessionStorage.getItem('olga-sw-reloaded')!==freshVersion){
       sessionStorage.setItem('olga-sw-reloaded',freshVersion);
