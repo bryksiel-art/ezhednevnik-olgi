@@ -228,20 +228,7 @@ const SOCIAL={
 'Мама-юрист. Дети в праве':['Как оформить документы ребёнка через Госуслуги','Права в детском саду: что делать, если...','Разбор: заявление в садик, пошагово','Пост-история из практики','Памятка: выплаты и льготы для семей','Ответ на популярный вопрос подписчиков']};
 
 /* ===== SEED ===== */
-function seed(){
- if(S.seeded)return;
- S.docs=[{id:uid(),done:0,t:'Записаться к педиатру — плановый осмотр малышки',sub:'себе напомнить за неделю',type:'Малышка'},{id:uid(),done:0,t:'Стоматолог — себе',sub:'',type:'Красота'},{id:uid(),done:0,t:'Маникюр — записаться',sub:'',type:'Красота'},{id:uid(),done:0,t:'Покраска волос — записаться',sub:'',type:'Красота'},{id:uid(),done:0,t:'Своя диспансеризация / чек-ап',sub:'',type:'Себе'}];
- S.kind=[{id:uid(),done:0,t:'Оплатить садик',sub:''},{id:uid(),done:0,t:'Сменная обувь / запасная одежда — проверить',sub:''},{id:uid(),done:0,t:'Уточнить расписание занятий и утренников',sub:''},{id:uid(),done:0,t:'Собрать папку документов (если попросят)',sub:''}];
- S.calls=[{id:uid(),done:0,t:'Позвонить маме',sub:''},{id:uid(),done:0,t:'Уточнить зачисление на курсы ТГУ',sub:''},{id:uid(),done:0,t:'Позвонить в садик (вопрос по группе)',sub:''}];
- S.buys=[{id:uid(),done:0,t:'Бытовое: узнать, что закончилось (порошок, губки, мешки)',sub:''}];
- S.orders=[{id:uid(),done:0,t:'Проверить корзины Ozon/WB — сначала в избранном',sub:'маркетплейс',st:'В избранном'}];
- S.gifts=[{id:uid(),done:0,t:'Идеи подарков к праздникам — мозговой штурм',sub:'родные'}];
- S.estate=[{id:uid(),done:0,t:'Критерии: бюджет, район, рядом садик и парк',sub:'обсудить с мужем'}];
- S.advent=ADVENT.map(t=>({id:uid(),t:t}));
- S.social=[];
- for(const net in SOCIAL)for(const t of SOCIAL[net])S.social.push({id:uid(),net:net,t:t,done:0});
- S.seeded=1;save();
-}
+function seed(){if(S.seeded)return;S.seeded=1;save()}
 seed();
 
 /* ===== TABS ===== */
@@ -284,9 +271,9 @@ function vHome(){
  if(dl.length){out+='<div class="card"><h3>⏳ Дедлайны курсов</h3>';dl.forEach(x=>out+='<div class="digestline"><span class="ic">'+(x.d<=3?'🔴':'⏰')+'</span><div class="'+(x.d<=3?'warnline':'')+'">'+x.c.n+' — осталось '+x.d+' дн. (до '+nice(x.c.dl)+')</div></div>');out+='</div>'}
  const bds=S.dr.map((d,i)=>({i:i,n:d.name,d:nextBD(d.date)})).filter(x=>x.d&&x.d.days<=7).sort((a,b)=>a.d.days-b.d.days);
  if(bds.length){out+='<div class="card"><h3>🎂 Дни рождения и годовщины</h3>';bds.forEach(b=>out+='<div class="digestline"><span class="ic">'+(b.d.days==0?'🎉':'🎈')+'</span><div>'+b.n+' — '+(b.d.days==0?'<b>СЕГОДНЯ!</b>':'через '+b.d.days+' дн.')+'</div></div>');out+='</div>'}
- out+='<div class="card"><h3>📋 Что ждёт</h3>';
- [['Врачи и записи',o.doc,'go(\'doc\')'],['Покупки/быт',o.buy,'go(\'buy\')'],['Заказы (Ozon/WB)',o.ord,'go(\'buy\')'],['Подарки',o.gift,'go(\'gift\')'],['Звонки',o.call,'go(\'call\')'],['Садик',o.kind,'go(\'kind\')'],['Посты в соцсети',o.soc,'go(\'social\')']].forEach(x=>{if(x[1]>0)out+='<div class="digestline"><span class="ic">☑️</span><div>'+x[0]+': <b>'+x[1]+'</b> <span class="mut" style="cursor:pointer" onclick="'+x[2]+'">открыть →</span></div></div>'});
- out+='<div class="mut" style="margin-top:4px">Всего незакрытых: '+(o.doc+o.buy+o.ord+o.gift+o.call+o.kind+o.soc)+'</div></div>';
+ out+='<div class="card"><h3>📋 Актуальные незакрытые дела</h3><div class="mut">Идеи-заготовки без даты не входят в число обязательных дел.</div>';
+ [['Мои задачи',o.inbox,'go(\'inbox\')'],['Врачи и записи',o.doc,'go(\'doc\')'],['Красота и уход',o.beauty,'go(\'beauty\')'],['Покупки/быт',o.buy,'go(\'buy\')'],['Заказы (Ozon/WB)',o.ord,'go(\'buy\')'],['Подарки',o.gift,'go(\'gift\')'],['Звонки',o.call,'go(\'call\')'],['Садик',o.kind,'go(\'kind\')'],['Посты в соцсети',o.soc,'go(\'social\')']].forEach(x=>{if(x[1]>0)out+='<div class="digestline"><span class="ic">☑️</span><div>'+x[0]+': <b>'+x[1]+'</b> <span class="mut" style="cursor:pointer" onclick="'+x[2]+'">открыть →</span></div></div>'});
+ out+='<div class="mut" style="margin-top:4px">Всего актуальных незакрытых: '+(o.inbox+o.doc+o.beauty+o.buy+o.ord+o.gift+o.call+o.kind+o.soc)+'</div><div class="mut">Отдельно заготовок и идей: '+o.samples+'. Они сохранены в своих разделах, но не считаются обязательными.</div></div>';
  const tm=tomorrowEvents();
  if(tm.length){out+='<div class="card"><h3>➡️ Завтра</h3>';tm.forEach(e=>out+='<div class="digestline"><span class="ic">•</span><div>'+(e.time?e.time+' ':'')+e.n+(e.pl?' <span class="mut">('+e.pl+')</span>':'')+'</div></div>');out+='</div>'}
  return out}
@@ -658,7 +645,27 @@ function digestText(){const n=new Date();let out='Ежедневник — '+nic
  const docs=S.docs.filter(x=>!x.done&&x.date&&dLeft(x.date)>=0&&dLeft(x.date)<=7);if(docs.length)out+='\n\nЗАПИСИ: '+docs.map(x=>'\n• '+nice(x.date)+' '+(x.time||'')+' '+x.t).join('');
  const o=openCount();out+='\n\nНЕЗАКРЫТЫЕ ДЕЛА: '+Object.entries(o).map(([k,v])=>k+': '+v).join(', ');return out;
 }
-function openCount(){return {doc:S.docs.filter(x=>!x.done).length,buy:S.buys.filter(x=>!x.done).length,ord:S.orders.filter(x=>!x.done).length,gift:S.gifts.filter(x=>!x.done).length,call:S.calls.filter(x=>!x.done).length,kind:S.kind.filter(x=>!x.done).length,soc:S.social.filter(x=>!x.done).length,inbox:S.inbox.filter(x=>!x.done).length}}
+const EXAMPLE_TITLES={
+ docs:['Записаться к педиатру — плановый осмотр малышки','Стоматолог — себе','Маникюр — записаться','Покраска волос — записаться','Своя диспансеризация / чек-ап'],
+ buys:['Бытовое: узнать, что закончилось (порошок, губки, мешки)'],
+ orders:['Проверить корзины Ozon/WB — сначала в избранном'],
+ gifts:['Идеи подарков к праздникам — мозговой штурм'],
+ calls:['Позвонить маме','Уточнить зачисление на курсы ТГУ','Позвонить в садик (вопрос по группе)'],
+ kind:['Оплатить садик','Сменная обувь / запасная одежда — проверить','Уточнить расписание занятий и утренников','Собрать папку документов (если попросят)'],
+ estate:['Критерии: бюджет, район, рядом садик и парк']
+};
+function isExampleItem(key,x){
+ if(!x||x.done)return false;
+ if(key==='social')return (SOCIAL[x.net]||[]).includes(x.t)&&!x.publishDate&&!x.url&&(!x.status||x.status==='Идея');
+ if(!(EXAMPLE_TITLES[key]||[]).includes(x.t)||x.date||x.due)return false;
+ if(key==='orders')return !x.delivery&&!x.url&&(!x.market||x.market==='Не указан');
+ return true;
+}
+function countActual(k){return (S[k]||[]).filter(x=>!x.done&&!isExampleItem(k,x)).length}
+function countExamples(){return ['docs','buys','orders','gifts','calls','kind','social','estate'].reduce((n,k)=>n+(S[k]||[]).filter(x=>isExampleItem(k,x)).length,0)}
+function openCount(){return {doc:(S.docs||[]).filter(x=>!x.done&&x.type!=='Красота'&&!isExampleItem('docs',x)).length,
+ beauty:(S.docs||[]).filter(x=>!x.done&&x.type==='Красота'&&!isExampleItem('docs',x)).length+(S.custom||[]).filter(x=>/^💅/.test(x.title||'')).length,
+ buy:countActual('buys'),ord:countActual('orders'),gift:countActual('gifts'),call:countActual('calls'),kind:countActual('kind'),soc:countActual('social'),inbox:(S.inbox||[]).filter(x=>!x.done).length,samples:countExamples()}}
 function vSettings(){return '<div class="card"><h3>💾 Резервная копия</h3><p>Данные находятся только в этом браузере. Перед переходом на новое устройство скачай резервную копию.</p><button class="btn g" onclick="exportData()">⬇ Скачать данные JSON</button><p class="mut">В резервной копии могут быть личные сведения.</p></div><div class="card"><h3>♻ Восстановление</h3><p>Импорт заменит текущие данные.</p><input type="file" accept=".json,application/json" onchange="importData(event)"></div><div class="card"><h3>🔔 Напоминания</h3><p>Переключатель находится в верхней части экрана. Уведомления работают только пока файл открыт в браузере.</p></div>'}
 /* ===== v5: семейное планирование, меню, рутины, контент-пайплайн ===== */
 S.routines=Array.isArray(S.routines)?S.routines:[];
@@ -697,7 +704,7 @@ function v5routines(){const today=iso(new Date()),due=v5routinesFor(today);let o
 }
 function v5setSocial(id,field,value){const x=S.social.find(x=>String(x.id)===String(id));if(!x)return;x[field]=value;if(field==='status')x.done=value==='Опубликовано'?1:0;if(field==='done')x.status=value?'Опубликовано':'Идея';save();render()}
 function v5social(){const nets=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'];let out='<div class="card"><h3>📣 Редакторский календарь</h3><p class="v5hint">Идея → подготовка → готово → опубликовано. Дата публикации показывает работу в недельном плане, а ссылка ведёт к готовому материалу.</p></div>';
- nets.forEach(net=>{const items=S.social.filter(x=>x.net===net);out+='<div class="card"><h3>'+safe(net)+' · '+items.filter(x=>!x.done).length+' в работе</h3>';items.forEach(x=>{const status=x.status||(x.done?'Опубликовано':'Идея');out+='<div class="v5cardline"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" '+(x.done?'checked':'')+' onchange="v5setSocial(\''+x.id+'\',\'done\',this.checked?1:0)"><b>'+safe(x.t)+'</b></label><div class="v5field"><select aria-label="Статус" onchange="v5setSocial(\''+x.id+'\',\'status\',this.value)">'+['Идея','В работе','Готово','Опубликовано'].map(t=>'<option '+(status===t?'selected':'')+'>'+t+'</option>').join('')+'</select><input aria-label="Дата публикации" type="date" value="'+safe(x.publishDate||'')+'" onchange="v5setSocial(\''+x.id+'\',\'publishDate\',this.value)"><button class="mini" onclick="v5setSocial(\''+x.id+'\',\'status\',\'Опубликовано\');v5setSocial(\''+x.id+'\',\'done\',1)">✓ Опубликовано</button></div><div class="v5field"><input aria-label="Ссылка на материал" placeholder="https:// ссылка на материал" value="'+safe(x.url||'')+'" onchange="v5setSocial(\''+x.id+'\',\'url\',this.value)">'+(normalizeLink(x.url||'')?'<a target="_blank" rel="noopener noreferrer" class="btn" href="'+safe(normalizeLink(x.url))+'">↗ Открыть</a>':'')+'</div></div>'});out+='<div class="v5field"><input id="v5new_'+nets.indexOf(net)+'" placeholder="Новая публикация"><button class="btn" onclick="v5addSocial('+nets.indexOf(net)+')">＋</button></div></div>'});return out;
+ nets.forEach(net=>{const items=S.social.filter(x=>x.net===net);out+='<div class="card"><h3>'+safe(net)+' · '+items.filter(x=>!x.done&&!isExampleItem('social',x)).length+' в работе · '+items.filter(x=>isExampleItem('social',x)).length+' идей</h3>';items.forEach(x=>{const status=x.status||(x.done?'Опубликовано':'Идея');out+='<div class="v5cardline"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" '+(x.done?'checked':'')+' onchange="v5setSocial(\''+x.id+'\',\'done\',this.checked?1:0)"><b>'+safe(x.t)+'</b></label><div class="v5field"><select aria-label="Статус" onchange="v5setSocial(\''+x.id+'\',\'status\',this.value)">'+['Идея','В работе','Готово','Опубликовано'].map(t=>'<option '+(status===t?'selected':'')+'>'+t+'</option>').join('')+'</select><input aria-label="Дата публикации" type="date" value="'+safe(x.publishDate||'')+'" onchange="v5setSocial(\''+x.id+'\',\'publishDate\',this.value)"><button class="mini" onclick="v5setSocial(\''+x.id+'\',\'status\',\'Опубликовано\');v5setSocial(\''+x.id+'\',\'done\',1)">✓ Опубликовано</button></div><div class="v5field"><input aria-label="Ссылка на материал" placeholder="https:// ссылка на материал" value="'+safe(x.url||'')+'" onchange="v5setSocial(\''+x.id+'\',\'url\',this.value)">'+(normalizeLink(x.url||'')?'<a target="_blank" rel="noopener noreferrer" class="btn" href="'+safe(normalizeLink(x.url))+'">↗ Открыть</a>':'')+'</div></div>'});out+='<div class="v5field"><input id="v5new_'+nets.indexOf(net)+'" placeholder="Новая публикация"><button class="btn" onclick="v5addSocial('+nets.indexOf(net)+')">＋</button></div></div>'});return out;
 }
 function v5addSocial(idx){const nets=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'],el=document.getElementById('v5new_'+idx);if(!el||!el.value.trim())return;S.social.push({id:uid(),net:nets[idx],t:el.value.trim(),done:0,status:'Идея',publishDate:'',url:''});save();render()}
 function v5setOrder(id,field,value){const x=S.orders.find(x=>String(x.id)===String(id));if(!x)return;if(field==='url'&&value.trim()&&normalizeLink(value)===null){toast('Нужна ссылка с https://');return}x[field]=value;save();render()}
