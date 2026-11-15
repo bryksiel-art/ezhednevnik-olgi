@@ -437,12 +437,12 @@ function vFest(){
 function togNy(i){S.ny[i].done=S.ny[i].done?0:1;save();render()}
 function editNy(i,v){S.ny[i].t=v;save()}
 function delNy(i){S.ny.splice(i,1);save();render()}
-function addNy(){const v=document.getElementById('ny_t').value.trim();if(!v)return;S.ny.push({id:uid(),t:v,done:0});save();render()}
+function addNy(){const v=document.getElementById('ny_t').value.trim();if(!v)return;S.ny.push({id:uid(),t:v,done:0,userAdded:true});save();render()}
 function setSpouse(){const d=document.getElementById('hs_d').value;S.fam.spouse=d;const match=(S.dr||[]).find(x=>/^(Максимус|муж)$/i.test(x.name||''));if(match&&d)match.date=d;else if(d)S.dr.push({id:uid(),name:'Муж',date:d,type:'birthday'});save();render();toast('Дата сохранена в праздниках и днях рождения')}
 function togHs(i){S.hs[i].done=S.hs[i].done?0:1;save();render()}
 function editHs(i,v){S.hs[i].t=v;save()}
 function delHs(i){S.hs.splice(i,1);save();render()}
-function addHs(){const v=document.getElementById('hs_t').value.trim();if(!v)return;S.hs.push({id:uid(),t:v,done:0});save();render()}
+function addHs(){const v=document.getElementById('hs_t').value.trim();if(!v)return;S.hs.push({id:uid(),t:v,done:0,userAdded:true});save();render()}
 function togAdv(i){S.adventDone[i]=!S.adventDone[i];save();render();if(S.adventDone.filter(Boolean).length==S.advent.length){confetti();toast('Адвент-календарь пройден! 🎄')}}
 function editAdv(i,v){S.advent[i].t=v;save()}
 function delAdv(i){S.advent.splice(i,1);S.adventDone.splice(i,1);save();render()}
@@ -856,15 +856,92 @@ function v6holidayDue(date,days){const d=new Date(date+'T12:00:00');d.setDate(d.
 function v6holidayEdit(hid,tid,field,val){const h=S.v6.holidays.find(h=>h.id===hid),t=h?.tasks.find(t=>t.id===tid);if(t){t[field]=val;save();render()}}
 function v6holidayPublish(id){const h=S.v6.holidays.find(x=>x.id===id);if(!h)return;let added=0;for(const t of h.tasks){if(!t.include)continue;if(v6holidayDue(h.date,Number(t.offset))<iso(new Date()))continue;const key='holiday:'+h.id+':'+t.id;if(S.inbox.some(x=>x.sourceKey===key))continue;S.inbox.unshift({id:uid(),t:h.name+': '+t.t,due:v6holidayDue(h.date,Number(t.offset)),category:'Подарки',priority:Number(t.offset)>=-3?'важно':'обычно',minutes:25,added:iso(new Date()),done:t.done?1:0,sourceKey:key});added++}save();render();toast('Добавлено '+added+' задач. Прошедшие сроки пропущены, дубликатов нет')}
 function v6holidayRemove(id){if(!confirm('Удалить план праздника? Уже добавленные задачи сохранятся.'))return;S.v6.holidays=S.v6.holidays.filter(x=>x.id!==id);save();render()}
-function v6filterTasks(){const m=Number(document.getElementById('v6available')?.value||25),cat=document.getElementById('v6focus')?.value||'Все',includeFuture=!!document.getElementById('v6future')?.checked;S.v6.available=m;S.v6.focus=cat;S.v6.includeFuture=includeFuture;save();v6showSuggestions()}
-function v6suggestedTasks(){const cap=Number(S.v6.available)||25,cat=S.v6.focus||'Все',future=!!S.v6.includeFuture;const candidates=S.inbox.filter(x=>!x.done&&(Number(x.minutes)||15)<=cap&&(cat==='Все'||x.category===cat)&&(future||!x.due||x.due<=iso(new Date())));const rank=x=>{let p=x.priority==='срочно'?100:x.priority==='важно'?45:0;if(x.due){const d=dLeft(x.due);p+=d<0?75:d===0?55:d===1?10:0}return p};return candidates.sort((a,b)=>rank(b)-rank(a)||(Number(a.minutes)||15)-(Number(b.minutes)||15)).slice(0,8)}
-function v6showSuggestions(){const el=document.getElementById('v6suggestions');if(!el)return;const items=v6suggestedTasks();el.innerHTML=items.length?items.map(x=>'<div class="v6line"><div class="v6flex"><div><b>'+safe(x.t)+'</b><div class="v6mut">'+safe(x.category||'Личное')+' · '+(Number(x.minutes)||15)+' мин · '+safe(dueLabel(x))+'</div></div><button class="v6btn" onclick="updInbox(\''+x.id+'\',\'done\',1)">✓</button></div></div>').join(''):'<p class="v6mut">Подходящих дел пока нет. Укажи длительность и сроки задач во вкладке «Быстро записать».</p>'}
+
+/* Short free-time suggestions are assembled from existing records, not copied. */
+function v6FreeTimeCandidates(){
+ const today=iso(new Date()),records=[];
+ const add=(key,x,category,focus,estimated,opts={})=>{
+  if(!x||x.done||!String(x.t||'').trim())return;
+  if(opts.sampleKey&&isExampleItem(opts.sampleKey,x))return;
+  if(opts.excluded)return;
+  const duration=Number(x.minutes)>0?Number(x.minutes):estimated;
+  const due=x.due||x.date||x.publishDate||'';
+  if(!opts.includeFuture&&due&&due>today)return;
+  records.push({id:String(x.id),key,title:String(x.t),category,focus,minutes:Math.max(5,Math.round(duration)),due,priority:x.priority||'обычно',source:x});
+ };
+ (S.inbox||[]).forEach(x=>add('inbox',x,x.category||'Личное',/Академия семьи|Детская афиша|Мама-юрист|Учёба/.test(x.category||'')?'Мои проекты':/Дом|Покупки|Садик|Малышка/.test(x.category||'')?'Дом и семья': 'Для себя',20,{includeFuture:true}));
+ (S.calls||[]).forEach(x=>add('calls',x,'Звонки','Дом и семья',10,{sampleKey:'calls',includeFuture:true}));
+ (S.kind||[]).forEach(x=>add('kind',x,'Садик','Дом и семья',15,{sampleKey:'kind',includeFuture:true}));
+ (S.buys||[]).forEach(x=>add('buys',x,'Покупки','Дом и семья',10,{sampleKey:'buys',includeFuture:true}));
+ (S.groceries||[]).forEach(x=>add('groceries',x,'Продукты','Дом и семья',10,{includeFuture:true}));
+ (S.gifts||[]).forEach(x=>add('gifts',x,'Подарки','Дом и семья',20,{sampleKey:'gifts',includeFuture:true}));
+ (S.docs||[]).forEach(x=>{
+  // Only an unscheduled action to make an appointment is suitable for a spare-time slot.
+  if(x.date||!/(записа|позвони|уточни|выбрать)/i.test(x.t||''))return;
+  add('docs',x,'Здоровье','Для себя',15,{sampleKey:'docs',includeFuture:true});
+ });
+ (S.social||[]).forEach(x=>{
+  if(x.done||isExampleItem('social',x))return;
+  const status=x.status||'Идея';
+  if(!['В работе','Готово'].includes(status)&&!x.publishDate)return;
+  add('social',x,'Посты · '+(x.net||'Сообщество'),'Мои проекты',30,{includeFuture:true});
+ });
+ (S.orders||[]).forEach(x=>{
+  if((x.st||'В избранном')!=='В избранном')return;
+  add('orders',x,'Покупки и заказы','Дом и семья',10,{sampleKey:'orders',includeFuture:true});
+ });
+ (S.estate||[]).forEach(x=>add('estate',x,'Недвижимость','Мои проекты',25,{sampleKey:'estate',includeFuture:true}));
+ (S.routines||[]).filter(x=>v5dueRoutine(x,today)&&!(x.completed||[]).includes(today)).forEach(x=>add('routines',x,'Регулярные дела','Дом и семья',15,{includeFuture:true}));
+ (S.ny||[]).forEach(x=>add('ny',x,'Подготовка к Новому году','Дом и семья',25,{excluded:!x.userAdded,includeFuture:true}));
+ (S.hs||[]).forEach(x=>add('hs',x,'Подготовка ко дню рождения','Дом и семья',25,{excluded:!x.userAdded,includeFuture:true}));
+ return records;
+}
+function v6SuggestedItems(){
+ const cap=Math.max(5,Number(S.v6.available)||20),focus=S.v6.focus||'Все дела',includeFuture=!!S.v6.includeFuture,today=iso(new Date());
+ const items=v6FreeTimeCandidates().filter(x=>x.minutes<=cap&&(focus==='Все дела'||x.focus===focus)&& (includeFuture||!x.due||x.due<=today));
+ const rank=x=>{
+  let score=x.priority==='срочно'?110:x.priority==='важно'?50:0;
+  if(x.due){const d=dLeft(x.due);score+=d<0?90:d===0?70:d===1?35:d<=7?15:0}
+  if(x.key==='social'&&x.source.status==='В работе')score+=15;
+  return score;
+ };
+ return items.sort((a,b)=>rank(b)-rank(a)||a.minutes-b.minutes).slice(0,8);
+}
+function v6suggestedTasks(){return v6SuggestedItems()}
+function v6filterTasks(){
+ const select=document.getElementById('v6available');
+ S.v6.available=Number(select?.value||20);
+ S.v6.focus=document.getElementById('v6focus')?.value||'Все дела';
+ S.v6.includeFuture=!!document.getElementById('v6future')?.checked;
+ save();v6showSuggestions();
+}
+function v6completeSuggestion(key,id){
+ const collections={inbox:'inbox',calls:'calls',kind:'kind',buys:'buys',groceries:'groceries',gifts:'gifts',docs:'docs',social:'social',orders:'orders',estate:'estate',ny:'ny',hs:'hs'};
+ if(key==='routines'){v5completeRoutine(id,iso(new Date()));v6showSuggestions();return}
+ const group=collections[key],x=(S[group]||[]).find(v=>String(v.id)===String(id));
+ if(!x)return;
+ if(key==='social'){x.status='Опубликовано';x.done=1}
+ else if(key==='orders'){x.st='Получено';x.done=1}
+ else x.done=1;
+ save();v6showSuggestions();
+}
+function v6suggestionSection(key){
+ return ({inbox:'inbox',calls:'call',kind:'kind',buys:'buy',groceries:'food',gifts:'gift',docs:'doc',social:'social',orders:'buy',estate:'estate',routines:'routines',ny:'fest',hs:'fest'})[key]||'inbox'
+}
+function v6showSuggestions(){
+ const el=document.getElementById('v6suggestions');if(!el)return;
+ const items=v6SuggestedItems(),cap=Number(S.v6.available)||20,focus=S.v6.focus||'Все дела';
+ if(!items.length){el.innerHTML='<p class="v6mut">Для выбранного времени и направления пока нет подходящих активных дел. Можно посмотреть другие направления или включить будущие задачи. Демонстрационные идеи в подбор не входят.</p>';return}
+ el.innerHTML='<div class="v6mut">Время примерное — проверь по обстоятельствам. Срочные и просроченные дела выше.</div>'+items.map(x=>
+  '<div class="v6line"><div class="v6flex"><div style="flex:1"><b>'+safe(x.title)+'</b><div class="v6mut">'+safe(x.category)+' · примерно '+x.minutes+' мин'+(x.due?' · '+safe(dueLabel(x)):' · без срока')+'</div></div><div style="display:flex;gap:5px"><button class="v6btn" title="Открыть раздел" onclick="go(\''+v6suggestionSection(x.key)+'\')">↗</button><button class="v6btn primary" title="Отметить выполненным" onclick="v6completeSuggestion(\''+x.key+'\',\''+safe(x.id)+'\')">✓</button></div></div></div>'
+ ).join('');
+}
 function v6assistant(){const draft=S.v6.captureDraft,cat=['Все','Личное','Малышка','Здоровье','Садик','Дом','Покупки','Подарки','Учёба','Академия семьи','Детская афиша','Мама-юрист','Недвижимость'];let out='<section class="v6pane"><h3>🎤 Скажи — я распределю</h3><p class="v6mut">Скажи несколько дел подряд: «завтра купить молоко; в пятницу в 14:00 к педиатру; подготовить пост Академии семьи». Я предложу разделы, даты и время — проверь перед сохранением.</p><div class="v6field"><textarea id="v6speech" placeholder="Например: в пятницу опубликовать афишу; завтра купить молоко; 25.11 записаться к врачу"></textarea></div><div class="v6field"><button id="v6voicebtn" class="v6btn" onclick="v6voiceStart()">🎤 Продиктовать</button><button class="v6btn primary" onclick="v6captureDraft()">Распределить по разделам</button></div><p class="v6mut">Распознавание зависит от браузера и разрешения микрофона; некоторые браузеры отправляют аудио своему сервису. Для конфиденциальных записей используй текст.</p></section>';
  if(draft.length){out+='<section class="v6pane"><h3>🧾 Проверь, куда всё попадёт</h3><p class="v6mut">Разделы определены автоматически по словам. Если дата или место не распознаны — исправь прямо здесь.</p>';draft.forEach(x=>out+='<div class="v6draft"><label><input type="checkbox" '+(x.selected?'checked':'')+' onchange="v6draftUpdate(\''+x.id+'\',\'selected\',this.checked)"> Сохранить</label><div class="v6field"><input type="text" value="'+safe(x.t)+'" aria-label="Дело" onchange="v6draftUpdate(\''+x.id+'\',\'t\',this.value)"></div><div class="v6field"><select aria-label="Куда сохранить" onchange="v6draftUpdate(\''+x.id+'\',\'dest\',this.value)">'+VOICE_DEST.map(([id,label])=>'<option value="'+id+'" '+(x.dest===id?'selected':'')+'>'+label+'</option>').join('')+'</select><input type="date" aria-label="Дата" value="'+safe(x.due)+'" onchange="v6draftUpdate(\''+x.id+'\',\'due\',this.value)"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="v6draftUpdate(\''+x.id+'\',\'time\',this.value)"></div>'+(x.timeAmbiguous&&!x.time?'<div class="v6mut" style="color:#a23d2b;font-weight:600">⚠ Уточни время: <select aria-label="Уточнить время" onchange="v6draftUpdate(\''+x.id+'\',\'time\',this.value)"><option value="">Выбери время</option>'+x.timeOptions.map((v,i)=>'<option value="'+v+'">'+(i===0?'Ночью / утром: ':'Днём / вечером: ')+v+'</option>').join('')+'</select></div>':'')+(x.dest==='social'?'<div class="v6field"><label class="v6mut">Сообщество: <select onchange="v6draftUpdate(\''+x.id+'\',\'net\',this.value)"><option value="">Выбери сообщество</option>'+VOICE_NETS.map(n=>'<option '+(x.net===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label></div>':'')+'</div>');out+='<button class="v6btn primary" onclick="v6commitDraft()">✓ Разложить выбранное по разделам</button></section>'}
- out+='<section class="v6pane"><h3>⏱ У меня появилось свободное время</h3><div class="v6field"><label>Сколько минут? <select id="v6available" onchange="v6filterTasks()">'+[5,10,15,25,40,60,90].map(m=>'<option value="'+m+'" '+((Number(S.v6.available)||25)===m?'selected':'')+'>'+m+'</option>').join('')+'</select></label><label>Направление <select id="v6focus" onchange="v6filterTasks()">'+cat.map(c=>'<option '+((S.v6.focus||'Все')===c?'selected':'')+'>'+c+'</option>').join('')+'</select></label><label><input id="v6future" type="checkbox" '+(S.v6.includeFuture?'checked':'')+' onchange="v6filterTasks()"> Включать будущие дела</label></div><div class="v6mut">Подбор из твоих невыполненных задач по сроку, приоритету и примерной длительности. Он не рассчитывает занятость календаря автоматически.</div><div id="v6suggestions"></div></section>';
+ out+='<section class="v6pane"><h3>✨ Чем заняться прямо сейчас?</h3><p class="v6mut">Подбор из активных дел разных разделов. Оценка времени примерная. Нажми ✓, чтобы отметить дело выполненным в исходном разделе.</p><div class="v6field"><label>У меня есть <select id="v6available" onchange="v6filterTasks()">'+[10,15,20,30,60,90].map(m=>'<option value="'+m+'" '+((Number(S.v6.available)||20)===m?'selected':'')+'>'+m+' мин</option>').join('')+'</select></label><label>Направление <select id="v6focus" onchange="v6filterTasks()">'+['Все дела','Дом и семья','Мои проекты','Для себя'].map(c=>'<option '+((S.v6.focus||'Все дела')===c?'selected':'')+'>'+c+'</option>').join('')+'</select></label><label><input id="v6future" type="checkbox" '+(S.v6.includeFuture?'checked':'')+' onchange="v6filterTasks()"> Показывать будущие дела</label></div><div id="v6suggestions"></div></section>';
  out+='<section class="v6pane"><h3>🎁 Автоматическая подготовка праздника</h3><p class="v6mut">Создай план по шаблону, проверь даты этапов, затем перенеси выбранные задачи в ежедневник. Ничего не добавляется без подтверждения.</p><div class="v6field"><select id="v6holidaytype"><option value="birthday">День рождения</option><option value="newyear">Новый год</option><option value="kindergarten">Праздник в садике</option><option value="custom">Другой праздник</option></select><input id="v6holidayname" type="text" placeholder="Кого или что празднуем?"><input id="v6holidaydate" type="date"><button class="v6btn primary" onclick="v6addHoliday()">Составить план</button></div>';
  S.v6.holidays.forEach(h=>{out+='<div class="v6draft"><div class="v6flex"><div><b>'+safe(h.name)+'</b><div class="v6mut">'+safe(nice(h.date))+' · '+safe(V6_HOLIDAY_TYPES[h.type]?.title||'Праздник')+'</div></div><button class="v6btn warn" onclick="v6holidayRemove(\''+h.id+'\')">Удалить</button></div>';h.tasks.forEach(t=>out+='<div class="v6line"><label><input type="checkbox" '+(t.include?'checked':'')+' onchange="v6holidayEdit(\''+h.id+'\',\''+t.id+'\',\'include\',this.checked)"> '+safe(t.t)+'</label><div class="v6mut">'+safe(nice(v6holidayDue(h.date,Number(t.offset))))+' ('+(Number(t.offset)<=0?Math.abs(Number(t.offset))+' дн. до праздника':'после')+')</div></div>');out+='<div class="v6field"><button class="v6btn primary" onclick="v6holidayPublish(\''+h.id+'\')">＋ Добавить выбранные этапы в задачи</button></div></div>'});return out+'</section>'}
-function v6home(){const initial=v5home();const suggestions=v6suggestedTasks().slice(0,3);const part='<div class="card"><h3>✨ Помощник дня</h3><p class="mut">Свободные 25 минут? Помощник подберёт дела из твоего списка. Здесь отображаются несколько текущих вариантов.</p>'+suggestions.map(x=>'<div class="v6line">'+safe(x.t)+' <span class="v6mut">· '+(Number(x.minutes)||15)+' мин</span></div>').join('')+'<button class="v6btn" onclick="go(\'assistant\')">🎤 Голос, время и праздники</button></div>';return part+initial}
+function v6home(){const initial=v5home();const suggestions=v6suggestedTasks().slice(0,3);const part='<div class="card"><h3>✨ Помощник дня</h3><p class="mut">Есть немного времени? Подберу актуальные дела из разных разделов.</p>'+(suggestions.length?suggestions.map(x=>'<div class="v6line">'+safe(x.title)+' <span class="v6mut">· около '+x.minutes+' мин</span></div>').join(''):'<p class="mut">Для текущих условий подбор пока пуст.</p>')+'<button class="v6btn" onclick="go(\'assistant\')">🎤 Голос и подбор дел</button></div>';return part+initial}
 
 /* Lightweight integrity check available locally; does not send private records anywhere. */
 function plannerIntegrity(){
@@ -901,7 +978,7 @@ renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':
 })();
 // Offline app shell cache, only available when served from HTTPS/localhost.
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  const freshVersion='2026-11-15-integrity-v4';
+  const freshVersion='2026-11-15-free-time-v5';
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(sessionStorage.getItem('olga-sw-reloaded')!==freshVersion){
       sessionStorage.setItem('olga-sw-reloaded',freshVersion);
