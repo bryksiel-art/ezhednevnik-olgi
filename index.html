@@ -582,7 +582,7 @@ function v6datePhrase(t){const a=t.toLowerCase(),now=new Date();if(/послез
  const words=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];const variants=['воскресенье','понедельник','вторник','среду','четверг','пятницу','субботу'];let idx=variants.findIndex(w=>a.includes(w));if(idx<0)idx=words.findIndex(w=>a.includes(w));if(idx>=0){const d=new Date();let shift=(idx-d.getDay()+7)%7;if(shift===0||a.includes('следующ'))shift+=7;d.setDate(d.getDate()+shift);return iso(d)}return ''}
 function v6guessCategory(t){const a=t.toLowerCase();if(/пост|афиш|публикац|сообществ/.test(a))return /академи/.test(a)?'Академия семьи':/юрист/.test(a)?'Мама-юрист':'Детская афиша';if(/врач|педиатр|запис|стоматолог|анализ|маникюр|волос/.test(a))return 'Здоровье';if(/садик|воспитател/.test(a))return 'Садик';if(/продукт|купить|заказ|озон|ozon|wildberries|вб\b/.test(a))return 'Покупки';if(/подар|праздник|день рождения/.test(a))return 'Подарки';if(/курс|урок|вебинар|обучен/.test(a))return 'Учёба';return 'Личное'}
 // === Умное распределение продиктованных поручений по РЕАЛЬНЫМ разделам ===
-const VOICE_DEST=[['inbox','📋 Задачи'],['custom','📅 Календарь'],['docs','🩺 Врачи и записи'],['groceries','🥦 Продукты'],['buys','🧴 Бытовые покупки'],['orders','📦 Ozon / WB'],['social','📣 Соцсети'],['kind','👧 Садик'],['calls','📞 Звонки'],['gifts','🎁 Подарки'],['estate','🏡 Недвижимость'],['notes','📝 Заметки']];
+const VOICE_DEST=[['inbox','📋 Задачи'],['custom','📅 Календарь'],['docs','🩺 Врачи и записи'],['beauty','💅 Красота и уход'],['groceries','🥦 Продукты'],['buys','🧴 Бытовые покупки'],['orders','📦 Ozon / WB'],['social','📣 Соцсети'],['kind','👧 Садик'],['calls','📞 Звонки'],['gifts','🎁 Подарки'],['estate','🏡 Недвижимость'],['notes','📝 Заметки']];
 const VOICE_NETS=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'];
 function voiceTimeInfo(t){
  const a=t.toLowerCase();
@@ -604,7 +604,8 @@ function voiceDestination(t){const a=t.toLowerCase();
  if(/(?:озон|ozon|wildberries|вайлдберриз|вб\b|маркетплейс)/.test(a))return'orders';
  if(/(?:академи[яи]\s+семьи|детск(?:ая|ой)\s+афиш|мама.?юрист|сообществ|опубликов|публикац|пост\b|клип\b|контент)/.test(a))return'social';
  if(/(?:позвонить|созвониться|набрать|перезвонить|позвони)/.test(a))return'calls';
- if(/(?:врач|педиатр|стоматолог|поликлиник|маникюр|окрашиван|покраск|парикмахер|анализ|узи|маммограф|мрт|кт|обследован|диспансеризац|флюорограф|рентген|гинеколог|терапевт|кардиолог|эндокринолог|невролог|офтальмолог|окулист|больниц|медосмотр|при[её]м)/.test(a))return'docs';
+ if(/(?:маникюр|педикюр|ногт|парикмахер|стрижк|окрашиван|покраск|укладк|косметолог|бров|ресниц|массаж лица|салон красот)/.test(a))return'beauty';
+ if(/(?:врач|педиатр|стоматолог|поликлиник|анализ|узи|маммограф|мрт|кт|обследован|диспансеризац|флюорограф|рентген|гинеколог|терапевт|кардиолог|эндокринолог|невролог|офтальмолог|окулист|больниц|медосмотр|при[её]м)/.test(a))return'docs';
  if(/(?:садик|детск(?:ий|ого)\s+сад|воспитател|утренник)/.test(a))return'kind';
  if(/(?:подарок|подарки|поздравить|сюрприз)/.test(a))return'gifts';
  if(/(?:квартир|недвижимост|ипотек|жк\b|просмотр жилья)/.test(a))return'estate';
@@ -615,7 +616,7 @@ function voiceDestination(t){const a=t.toLowerCase();
  return'inbox';
 }
 function voiceNet(t){const a=t.toLowerCase();if(/академи/.test(a))return VOICE_NETS[0];if(/юрист|праве/.test(a))return VOICE_NETS[2];if(/детск.*афиш|железнодорожн/.test(a))return VOICE_NETS[1];return ''}
-function voiceCategory(dest,t){return dest==='social'?(/академи/.test(t.toLowerCase())?'Академия семьи':/юрист/.test(t.toLowerCase())?'Мама-юрист':'Детская афиша'):{docs:'Здоровье',groceries:'Покупки',buys:'Покупки',orders:'Покупки',kind:'Садик',calls:'Личное',gifts:'Подарки',estate:'Недвижимость',custom:'Личное',notes:'Личное'}[dest]||v6guessCategory(t)}
+function voiceCategory(dest,t){return dest==='social'?(/академи/.test(t.toLowerCase())?'Академия семьи':/юрист/.test(t.toLowerCase())?'Мама-юрист':'Детская афиша'):{docs:'Здоровье',beauty:'Красота и уход',groceries:'Покупки',buys:'Покупки',orders:'Покупки',kind:'Садик',calls:'Личное',gifts:'Подарки',estate:'Недвижимость',custom:'Личное',notes:'Личное'}[dest]||v6guessCategory(t)}
 function voiceSplit(raw){return raw.replace(/\s+(?:точка с запятой|новое дело|следующее дело)\s+/gi,';').replace(/,\s*(?=(?:завтра|сегодня|послезавтра|в\s+(?:понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)|купить|заказать|записаться|позвонить|подготовить|опубликовать))/gi,'; ').replace(/\s+и\s+(?=(?:купить|заказать|позвонить|записаться|подготовить|опубликовать)\b)/gi,'; ').split(/\s*(?:[;\n]+|\s+а ещё\s+|\s+а еще\s+|\s+и ещё\s+|\s+и еще\s+|\s+также\s+|\s+потом\s+)\s*/i).map(s=>s.trim().replace(/[.!]+$/,'')).filter(Boolean)}
 function v6captureDraft(){
  const el=document.getElementById('v6speech');if(!el)return;
@@ -642,6 +643,7 @@ function v6draftUpdate(id,field,val){
 }
 function voiceCommitOne(x){const id=uid(),t=x.t.trim(),date=x.due||'',time=x.time||'';if(!t)return false;switch(x.dest){
  case 'custom':if(!date){S.inbox.unshift({id,t,done:0,due:'',category:'Личное',priority:x.priority,minutes:x.minutes,added:iso(new Date())});break}S.custom.push({id,title:t,date,time});break;
+ case 'beauty':if(date){S.custom.push({id,title:'💅 '+t,date,time});}else{S.inbox.unshift({id,t,done:0,due:'',category:'Красота и уход',priority:x.priority||'обычно',minutes:x.minutes||15,added:iso(new Date())});}break;
  case 'docs':S.docs.push({id,t,done:0,type:/дочк|ребен|ребён|малыш|педиатр/.test(t.toLowerCase())?'Малышка':/маникюр|волос|покраск|окрашиван/.test(t.toLowerCase())?'Красота':'Себе',date,time,sub:''});break;
  case 'groceries':S.groceries.push({id,t,done:0});break;
  case 'buys':S.buys.push({id,t,done:0});break;
