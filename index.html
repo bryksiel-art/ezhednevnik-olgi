@@ -245,6 +245,8 @@ function agendaItemsFor(ds){
  (S.routines||[]).filter(x=>v5dueRoutine(x,ds)&&!(x.completed||[]).includes(ds)).forEach(x=>add('🔁',x.t,'routines','повтор'));
  (S.dr||[]).forEach(x=>{if(String(x.date||'').slice(5)===ds.slice(5))add(x.type==='anniversary'?'💍':'🎂',x.name,'dr','ежегодно')});
  (S.courtCases||[]).filter(x=>x.hearing&&x.hearing.slice(0,10)===ds).forEach(x=>add('⚖️','Заседание: '+x.name,'court',x.hearing.slice(11,16)));
+ (S.courtCases||[]).filter(x=>!x.done&&x.prepDue===ds).forEach(x=>add('📝','Дело '+x.name+': '+(x.prepare||'Подготовить документы'),'court','срок подготовки'));
+
  (S.heritageTasks||[]).filter(x=>!x.done&&x.due===ds).forEach(x=>add('📜',x.t,'heritage',''));
  const spouseDate=S.fam&&S.fam.spouse;
  if(spouseDate&&String(spouseDate).slice(5)===ds.slice(5)&&!rows.some(x=>x.section==='dr'&&/максимус|муж/i.test(x.title)))add('🎂','День рождения мужа','fest','ежегодно');
@@ -480,9 +482,24 @@ function removePrivateRecord(kind,id){
  const key=kind==='court'?'courtCases':'heritageTasks';
  S[key]=S[key].filter(x=>String(x.id)!==String(id));save();render();
 }
+/* Explicitly requested court item. Populate locally once, preserve later edits. */
+function ensureCourtPreparation20261214(){
+ if(S.courtPreparationSeeded20261214)return;
+ const number='А54-1254/2026';
+ let item=S.courtCases.find(x=>String(x.name||'').replace(/№|\s/g,'')===number);
+ if(!item){
+  item={id:'court-a54-1254-2026',name:number,t:number,hearing:'',prepare:'Подготовить возражения',prepDue:'2026-12-14',done:0};
+  S.courtCases.push(item);
+ }else{
+  if(!item.prepare)item.prepare='Подготовить возражения';
+  if(!item.prepDue)item.prepDue='2026-12-14';
+ }
+ S.courtPreparationSeeded20261214=true;save();
+}
+ensureCourtPreparation20261214();
 function vCourt(){
  let out='<div class="card"><h3>⚖️ Судебные дела</h3><p class="mut">Номер дела, дата заседания и документы к подготовке. Записи хранятся только на этом устройстве.</p><div class="frm"><input id="private_case" placeholder="Номер дела"><input id="private_hearing" type="datetime-local" aria-label="Дата и время заседания"><textarea id="private_preparation" placeholder="Что подготовить к заседанию"></textarea><button class="add" onclick="addPrivateRecord(\'court\')">＋ Добавить</button></div></div>';
- S.courtCases.forEach(x=>{out+='<div class="card"><h3>Дело '+safe(x.name)+'</h3><label>Дата и время заседания <input type="datetime-local" value="'+safe(x.hearing||'')+'" onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'hearing\',this.value)"></label><p>Что подготовить</p><textarea onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'prepare\',this.value)">'+safe(x.prepare||'')+'</textarea><div class="frm"><label><input type="checkbox" '+(x.done?'checked':'')+' onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'done\',this.checked?1:0)"> Подготовлено</label><button class="del" onclick="removePrivateRecord(\'court\',\''+safe(x.id)+'\')">✕</button></div></div>'});return out;
+ S.courtCases.forEach(x=>{out+='<div class="card"><h3>Дело '+safe(x.name)+'</h3><label>Дата и время заседания <input type="datetime-local" value="'+safe(x.hearing||'')+'" onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'hearing\',this.value)"></label><div class="frm"><label>Подготовить к <input type="date" value="'+safe(x.prepDue||'')+'" onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'prepDue\',this.value)"></label></div><p>Что подготовить</p><textarea onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'prepare\',this.value)">'+safe(x.prepare||'')+'</textarea><div class="frm"><label><input type="checkbox" '+(x.done?'checked':'')+' onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'done\',this.checked?1:0)"> Подготовлено</label><button class="del" onclick="removePrivateRecord(\'court\',\''+safe(x.id)+'\')">✕</button></div></div>'});return out;
 }
 /* Research workflow based on the 02.10.2026 v4 request packet.
    Institution contact addresses are reference data, recheck on sending day.
@@ -971,6 +988,7 @@ function v6FreeTimeCandidates(){
  });
  (S.estate||[]).forEach(x=>add('estate',x,'Недвижимость','Мои проекты',25,{sampleKey:'estate',includeFuture:true}));
  (S.heritageTasks||[]).forEach(x=>add('heritage',x,'Наследие','Мои проекты',25,{includeFuture:true}));
+ (S.courtCases||[]).filter(x=>!x.done&&x.prepare).forEach(x=>add('court',{...x,t:'Дело '+x.name+': '+x.prepare,due:x.prepDue||''},'Судебные дела','Мои проекты',45,{includeFuture:true}));
  (S.routines||[]).filter(x=>v5dueRoutine(x,today)&&!(x.completed||[]).includes(today)).forEach(x=>add('routines',x,'Регулярные дела','Дом и семья',15,{includeFuture:true}));
  (S.ny||[]).forEach(x=>add('ny',x,'Подготовка к Новому году','Дом и семья',25,{excluded:!x.userAdded,includeFuture:true}));
  (S.hs||[]).forEach(x=>add('hs',x,'Подготовка ко дню рождения','Дом и семья',25,{excluded:!x.userAdded,includeFuture:true}));
@@ -996,7 +1014,7 @@ function v6filterTasks(){
  save();v6showSuggestions();
 }
 function v6completeSuggestion(key,id){
- const collections={heritage:'heritageTasks',inbox:'inbox',calls:'calls',kind:'kind',buys:'buys',groceries:'groceries',gifts:'gifts',docs:'docs',social:'social',orders:'orders',estate:'estate',ny:'ny',hs:'hs'};
+ const collections={court:'courtCases',heritage:'heritageTasks',inbox:'inbox',calls:'calls',kind:'kind',buys:'buys',groceries:'groceries',gifts:'gifts',docs:'docs',social:'social',orders:'orders',estate:'estate',ny:'ny',hs:'hs'};
  if(key==='routines'){v5completeRoutine(id,iso(new Date()));v6showSuggestions();return}
  const group=collections[key],x=(S[group]||[]).find(v=>String(v.id)===String(id));
  if(!x)return;
@@ -1006,7 +1024,7 @@ function v6completeSuggestion(key,id){
  save();v6showSuggestions();
 }
 function v6suggestionSection(key){
- return ({heritage:'heritage',inbox:'inbox',calls:'call',kind:'kind',buys:'buy',groceries:'food',gifts:'gift',docs:'doc',social:'social',orders:'buy',estate:'estate',routines:'routines',ny:'fest',hs:'fest'})[key]||'inbox'
+ return ({court:'court',heritage:'heritage',inbox:'inbox',calls:'call',kind:'kind',buys:'buy',groceries:'food',gifts:'gift',docs:'doc',social:'social',orders:'buy',estate:'estate',routines:'routines',ny:'fest',hs:'fest'})[key]||'inbox'
 }
 function v6showSuggestions(){
  const el=document.getElementById('v6suggestions');if(!el)return;
@@ -1058,7 +1076,7 @@ renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':
 })();
 // Offline app shell cache, only available when served from HTTPS/localhost.
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  const freshVersion='2026-11-16-heritage-workflow-v8';
+  const freshVersion='2026-11-16-court-deadline-v9';
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(sessionStorage.getItem('olga-sw-reloaded')!==freshVersion){
       sessionStorage.setItem('olga-sw-reloaded',freshVersion);
