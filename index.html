@@ -122,6 +122,7 @@ S.savedLinks=(S.savedLinks&&typeof S.savedLinks==='object')?S.savedLinks:{};
 
 const FAMILY_DATES_2026=[{"name":"Дима","date":"2000-11-19","type":"birthday"},{"name":"Максимус","date":"2000-11-28","type":"birthday"},{"name":"Фима","date":"2000-12-16","type":"birthday"},{"name":"Алексей Быстров","date":"2000-01-07","type":"birthday"},{"name":"Свадьба родителей","date":"2000-01-30","type":"anniversary"},{"name":"Брукс","date":"2000-03-12","type":"birthday"},{"name":"Алина Зайцева","date":"2000-03-12","type":"birthday"},{"name":"Ксюша","date":"2000-03-27","type":"birthday"},{"name":"Лена Шпилькова","date":"2000-03-27","type":"birthday"},{"name":"Папа","date":"2000-04-27","type":"birthday"},{"name":"Доченька Алёна","date":"2000-05-03","type":"birthday"},{"name":"Бабушка","date":"2000-05-16","type":"birthday"},{"name":"Дюша","date":"2000-05-24","type":"birthday"},{"name":"Мама","date":"2000-06-21","type":"birthday"},{"name":"Надя","date":"2000-06-26","type":"birthday"},{"name":"Деня","date":"2000-07-01","type":"birthday"},{"name":"Шляхтов Александр Степанович","date":"2000-07-02","type":"birthday"},{"name":"Игорь","date":"2000-07-24","type":"birthday"},{"name":"Саша Колосов","date":"2000-08-08","type":"birthday"},{"name":"Руслан Петров","date":"2000-08-13","type":"birthday"},{"name":"Света","date":"2000-08-16","type":"birthday"},{"name":"Летучев А.А.","date":"2000-08-26","type":"birthday"},{"name":"Оксана Соловьева","date":"2000-09-12","type":"birthday"},{"name":"Веня","date":"2000-09-20","type":"birthday"},{"name":"Катя","date":"2000-09-29","type":"birthday"},{"name":"Даша","date":"2000-10-09","type":"birthday"}];
 function seedFamilyDates2026(){
+ if(S.familyDatesSeeded2026)return;
  if(!Array.isArray(S.dr))S.dr=[];
  let changed=false;
  const norm=v=>(v||'').toString().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
@@ -130,7 +131,8 @@ function seedFamilyDates2026(){
   if(S.dr.some(x=>norm(x.name)===norm(item.name)&&String(x.date||'').slice(5)===md))return;
   S.dr.push({id:'familydates-2026-'+String(i+1).padStart(2,'0'),name:item.name,date:item.date,type:item.type});changed=true;
  });
- if(changed)save();
+ S.familyDatesSeeded2026=true;
+ save();
 }
 seedFamilyDates2026();
 
@@ -312,7 +314,7 @@ function addSocial(net){const id='soc_'+btoa(unescape(encodeURIComponent(net))).
 
 /* ===== ДР ===== */
 function vDr(){
- let out='<div class="card"><h3>🎂 Дни рождения</h3><div class="frm"><input type="text" id="dr_n" placeholder="Имя"><input type="date" id="dr_d"><button class="add" onclick="addDr()">＋</button></div><div class="mut">Вводится один раз — дальше напоминает каждый год.</div>';
+ let out='<div class="card"><h3>🎂 Дни рождения и годовщины</h3><div class="frm"><input type="text" id="dr_n" placeholder="Имя"><input type="date" id="dr_d"><button class="add" onclick="addDr()">＋</button></div><div class="mut">Вводится один раз — дальше напоминает каждый год.</div>';
  const items=S.dr.map((d,i)=>({i:i,n:d.name,type:d.type||'birthday',d:nextBD(d.date)})).filter(x=>x.d).sort((a,b)=>a.d.days-b.d.days);
  items.forEach(x=>{out+='<div class="row"><div class="txt"><div style="display:flex;gap:8px;align-items:center"><span style="font-size:20px">'+(x.type==='anniversary'?'💍':'🎈')+'</span><div style="flex:1"><b>'+esc(x.n)+'</b> — '+nice(iso(x.d.date))+'<div class="mut">'+(x.d.days==0?'🎉 СЕГОДНЯ! Не забудьте поздравить!':x.d.days==1?'завтра!':'через '+x.d.days+' дн.')+'</div></div></div></div><button class="del" onclick="del(\'dr\','+x.i+')">✕</button></div>'});
  out+='</div>';
