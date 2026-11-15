@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#FFE0B2">
+<title>Ежедневник Ольги — Семейный помощник</title>
+<style>
+:root{--bg:#faf6f0;--card:#fff;--ink:#3d3a36;--mut:#8a857c;--acc:#e8794a;--acc2:#7fb069;--blue:#5b8bd0;--pink:#d96a9b;--warn:#d64545;--soft:#f3ece3}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+header{position:sticky;top:0;z-index:9;background:var(--bg);padding:10px 14px 6px;border-bottom:1px solid #e7dfd3}
+header h1{margin:0;font-size:18px}
+header .sub{font-size:12px;color:var(--mut)}
+nav{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;position:sticky;top:0;z-index:8;background:var(--bg);scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;border:1px solid #e0d6c6;background:#fff;border-radius:20px;padding:7px 12px;font-size:13px;color:var(--ink)}
+nav button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+main{padding:12px 12px 40px}
+.card{background:var(--card);border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card h3{margin:0 0 8px;font-size:15px}
+.row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px dashed #eee}
+.row:last-child{border:none}
+.row.done{opacity:.45;text-decoration:line-through}
+.row input[type=checkbox]{width:20px;height:20px;flex:0 0 auto;margin-top:2px;accent-color:var(--acc)}
+.txt{flex:1;min-width:0}
+.txt input{width:100%;border:none;border-bottom:1px solid transparent;background:transparent;font:inherit;color:inherit;padding:1px 0}
+.txt input:focus{border-bottom-color:#d8cfc0;outline:none}
+.sub input{font-size:12px;color:var(--mut)}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin:2px 4px 0 0;background:var(--soft);color:var(--mut)}
+.tag.y{background:#fdf0d5;color:#a8750a}.tag.p{background:#fbe4ef;color:#b23a76}.tag.b{background:#e3ecfa;color:#3561a5}.tag.g{background:#e4f2df;color:#4c7a35}
+.del{border:none;background:none;color:#c9c0b2;font-size:16px;padding:4px;flex:0 0 auto}
+.frm{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.frm input,.frm select{border:1px solid #ddd3c2;border-radius:10px;padding:8px;font:inherit;background:#fff;min-width:0}
+.frm input{flex:1}
+.frm input[type=date],.frm input[type=time]{flex:0 0 42%}
+.frm .add{flex:0 0 auto;border:none;background:var(--acc2);color:#fff;border-radius:10px;padding:8px 14px;font-size:15px}
+.mut{color:var(--mut);font-size:12px}
+.btn{border:1px solid #ddd3c2;background:#fff;border-radius:10px;padding:8px 12px;font:inherit}
+.btn.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.g{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.small{font-size:13px}
+.big{font-size:22px;font-weight:700}
+.prog{height:8px;background:#eee6d9;border-radius:5px;overflow:hidden;margin:6px 0}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#f0a35e,#e8794a)}
+.alert{background:#fdeaea;border:1px solid #f3c4c4;border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}
+.warnline{color:var(--warn);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.grid .dow{font-size:11px;color:var(--mut);padding:4px 0}
+.day{position:relative;aspect-ratio:1;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;background:#fff}
+.day.today{outline:2px solid var(--acc);font-weight:700}
+.day .dots{position:absolute;bottom:4px;display:flex;gap:2px}
+.day .dots i{width:5px;height:5px;border-radius:50%;display:block}
+.day.ev{background:#fdf3e4}.day.bd{background:#fbe4ef}.day.doc{background:#e3ecfa}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 8px}
+.grid .ev-list{font-size:13px}
+.h2{margin:14px 0 6px;font-size:15px;font-weight:700}
+#toast{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#3d3a36;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:.3s;z-index:99;pointer-events:none}
+#toast.on{opacity:1}
+.conf{position:fixed;top:-10px;font-size:22px;animation:fall 3s linear forwards;z-index:50}
+@keyframes fall{to{transform:translateY(105vh) rotate(340deg);opacity:.2}}
+.digestline{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:14px}
+.digestline .ic{flex:0 0 auto}
+#notelist textarea{width:100%;border:1px solid #ddd3c2;border-radius:10px;padding:8px;font:inherit;min-height:70px}
+
+/* Unified mobile-first design: original v6 functions remain intact */
+:root{--bg:#fff9f6;--card:#fff;--ink:#38332f;--mut:#807b77;--acc:#ee7069;--acc2:#75a67e;--soft:#fff1e9;--blue:#638bc1;--pink:#d66c99}
+body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);font-size:15px}
+header.new-header{position:relative;top:auto;z-index:5;background:linear-gradient(135deg,#ffe4bd 0%,#ffd2a6 65%,#ffcab0 100%);border:0;border-radius:0 0 26px 26px;padding:19px max(16px,calc((100vw - 1060px)/2)) 17px;box-shadow:0 4px 18px #bd745020}
+.header-line{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.eyebrow{font-size:12px;color:#8c6655;font-weight:600;letter-spacing:.03em}
+header.new-header h1{font-size:23px;letter-spacing:-.025em;margin:3px 0 6px}header.new-header .sub{font-size:13px;color:#705a50}
+.bell-btn{border:1px solid #ffffffaf;background:#ffffffa8;border-radius:14px;min-width:44px;min-height:44px;font-size:19px;cursor:pointer}
+.quick-action{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:15px;border:1px solid #fff8;border-radius:14px;padding:13px 15px;background:#ffffffdb;color:#6d3d37;font-size:15px;font-weight:700;text-align:left;cursor:pointer;box-shadow:0 2px 8px #a36e3610}
+.quick-action span{font-weight:400;font-size:11px;color:#957b73}
+nav#tabs{position:relative;top:auto;max-width:1060px;margin:14px auto 0;background:transparent;padding:0 14px 10px;display:flex;justify-content:space-between;gap:7px;border:0}
+nav#tabs button{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;min-width:0;border:1px solid #f3e2db;border-radius:14px;background:white;padding:10px 6px;line-height:1.1;font-weight:500;font-size:12px;box-shadow:0 1px 4px #6a47310a;cursor:pointer}
+nav#tabs button.on{background:#fff0e9;color:#c94b4c;border-color:#f3ada5}.nav-icon{font-size:20px}
+main#view{max-width:1060px;margin:0 auto;padding:14px 14px 100px;min-height:45vh}
+.card,.v6pane{border:1px solid #f1e7e1;border-radius:17px;background:white;box-shadow:0 4px 17px #493c3009;padding:15px;margin-bottom:12px}
+.card h3,.v6pane h3{font-size:16px;line-height:1.4;margin:0 0 10px;color:#45403b}
+.btn,.v6btn,.mini,.frm .add{cursor:pointer;border-radius:11px;min-height:36px}
+.btn.acc,.v6btn.primary{background:#ee7069!important;border-color:#ee7069!important;color:white!important}
+.frm input,.frm select,.v6field input,.v6field select,.v6field textarea{max-width:100%;border-radius:10px}
+input,textarea,select,button{font-family:inherit}input[type=checkbox]{accent-color:#ee7069}
+.row{min-height:42px}.day{cursor:pointer}
+.bottom-nav{display:none;position:fixed;top:auto;bottom:0;left:0;right:0;z-index:60;height:calc(68px + env(safe-area-inset-bottom,0px));padding:5px 7px env(safe-area-inset-bottom,0px);background:#fffffff5;border-top:1px solid #f0ded6;box-shadow:0 -5px 16px #4f3d2b16;align-items:center;justify-content:space-around}
+.bottom-nav button{background:transparent;border:0;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:#938680;font-size:11px;padding:5px 2px;border-radius:12px}
+.bottom-nav button.on{background:#fff0e9;color:#c24e4c;font-weight:700}.bottom-nav .nav-icon{font-size:21px}
+.more-overlay[hidden]{display:none!important}.more-overlay{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;background:#241f1da6;padding:0 10px}
+.more-sheet{background:var(--bg);width:min(100%,660px);max-height:85vh;overflow-y:auto;border-radius:24px 24px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 22px #0003}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.sheet-head h2{font-size:19px}.sheet-head button{border:none;background:white;border-radius:12px;padding:10px 14px;cursor:pointer;font-size:18px}
+.more-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.more-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid #f0ded8;border-radius:14px;background:white;min-height:80px;padding:10px 5px;font-size:12px;color:var(--ink);cursor:pointer;text-align:center}.more-grid button span{font-size:23px}.sheet-open{overflow:hidden}
+#toast{z-index:120;max-width:min(90vw,500px);text-align:center}
+.capture-shortcuts{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;margin-top:14px}.capture-shortcuts button{border:1px solid #fff9;border-radius:14px;min-height:54px;cursor:pointer;font:inherit;font-weight:700}.speak-action{text-align:left;padding:9px 13px;background:#fff;color:#754135;box-shadow:0 2px 8px #a36e3610}.speak-action span{display:block;font-size:11px;color:#957b73;font-weight:400;margin-top:2px}.write-action{background:#ffede2;color:#754135}.speak-action:focus-visible,.write-action:focus-visible{outline:3px solid #e8794a;outline-offset:2px}
+@media(max-width:380px){.capture-shortcuts{grid-template-columns:minmax(0,1fr) 95px}.speak-action span{font-size:10px}}
+@media(max-width:768px){nav#tabs{display:none}.bottom-nav{display:flex}header.new-header{padding:14px 16px 17px}main#view{padding:15px 12px 110px}.quick-action span{font-size:10px}.v5week{grid-template-columns:1fr!important}}
+@media(max-width:380px){.more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-action span{display:none}}
+@media(min-width:769px){.bottom-nav{display:none}}
+</style><link rel="manifest" href="./manifest.webmanifest">
+
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+</head><body>
+<header class="new-header">
+  <div class="header-line"><div><div class="eyebrow">🌿 Семейный помощник</div><h1>Мой ежедневник</h1><div class="sub" id="hdrdate"></div></div>
+  <button id="bell" class="bell-btn" aria-label="Выключить напоминания" title="Напоминания" onclick="bellToggle()">🔔</button></div>
+  <div class="capture-shortcuts">
+    <button class="speak-action" onclick="startVoiceFromHome()" aria-label="Надиктовать дела и распределить по разделам">🎤 Сказать дела <span>Нажми и говори — разложу по разделам</span></button>
+    <button class="write-action" onclick="go('inbox')" aria-label="Быстро записать дело">＋ Записать</button>
+  </div>
+</header>
+<nav id="tabs" aria-label="Основные разделы"></nav>
+<main id="view" tabindex="-1"></main>
+<nav id="bottomNav" class="bottom-nav" aria-label="Нижняя навигация"></nav>
+<div id="moreOverlay" class="more-overlay" hidden onclick="if(event.target===this)closeMore()"><div class="more-sheet" role="dialog" aria-modal="true" aria-labelledby="moreTitle"><div class="sheet-head"><h2 id="moreTitle">Все разделы</h2><button onclick="closeMore()" aria-label="Закрыть">✕</button></div><div id="moreGrid" class="more-grid"></div></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+const K='olgaPlannerV4';
+function def(){return{dr:[],docs:[],buys:[],orders:[],gifts:[],groceries:[],kind:[],notes:[],calls:[],estate:[],advent:[],adventDone:[],steps:{},social:[],custom:[],fam:{spouse:''},inbox:[],routines:[],mealPlan:{},recipeCustom:[],seeded:0,confetti:'',bell:1}}
+function load(){try{const s=JSON.parse(localStorage.getItem(K));return s?Object.assign(def(),s):def()}catch(e){return def()}}
+let S=load();
+function save(){localStorage.setItem(K,JSON.stringify(S))}
+S.savedLinks=(S.savedLinks&&typeof S.savedLinks==='object')?S.savedLinks:{};
+const uid=()=>Date.now()+''+Math.floor(Math.random()*1e4);
+const MON=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const DOW=['вс','пн','вт','ср','чт','пт','сб'];
+function esc(s){return (s==null?'':s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function today0(){const d=new Date();d.setHours(0,0,0,0);return d}
+function dLeft(s){return Math.round((new Date(s+'T00:00:00')-today0())/864e5)}
+function nice(s){if(!s)return'';const d=new Date(s+'T00:00:00');return d.getDate()+' '+MON[d.getMonth()]+', '+DOW[d.getDay()]}
+function nextBD(ds){if(!ds)return null;const[y,m,d]=ds.split('-').map(Number);let c=new Date(new Date().getFullYear(),m-1,d);if(c<today0())c=new Date(c.getFullYear()+1,m-1,d);return{days:Math.round((c-today0())/864e5),date:c}}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2200)}
+function confetti(){const e=['🎉','✨','🎊','💛'];for(let i=0;i<14;i++){const s=document.createElement('div');s.className='conf';s.textContent=e[i%4];s.style.left=(5+Math.random()*90)+'%';s.style.animationDelay=(Math.random()*.8)+'s';document.body.appendChild(s);setTimeout(()=>s.remove(),4200)}}
+
+/* ===== ДАННЫЕ ИЗ ТАБЛИЦЫ ===== */
+const EVENTS=[
+['2026-11-03','21:30','23:00','Как ИИ меняет жизнь детей и как помочь','LFK, онлайн','Регистрация подтверждена'],
+['2026-11-05','13:00','','Эфир Кирилла Пшинника: заработок на внедрении ИИ','онлайн','Регистрация не подтверждена'],
+['2026-11-10','21:00','22:30','Умный старт! Первый смартфон и экранное время','LFK, онлайн',''],
+['2026-11-15','','','Старт: «Продвижение в социальных сетях»','Техноград, МТС Линк','до 14.12, 5 модулей'],
+['2026-11-16','','','Старт: «Нейросети и личный бренд»','Техноград, МТС Линк','до 29.11, 14 дней доступа'],
+['2026-11-16','09:00','18:00','ИИ КОНФА 2026','кластер «Ломоносов», Раменский бульвар, 1','ожидается подтверждение'],
+['2026-11-18','','','Форум «Технологии Добра»','онлайн',''],
+['2026-11-18','19:00','20:30','Креативный код — занятие 1','онлайн, без записи',''],
+['2026-11-20','10:00','11:30','Практика внедрения ИИ-инструментов','онлайн','билет получен'],
+['2026-11-21','10:00','13:00','ИИ-ассистент для ВКонтакте — занятие 1','онлайн, без записи','нужен ПК/ноутбук'],
+['2026-11-22','10:00','13:00','ИИ-ассистент для ВКонтакте — занятие 2','онлайн, без записи',''],
+['2026-11-24','','','Старт: «Бесплатные нейросети для блога ВКонтакте»','Техноград, МТС Линк','до 29.11'],
+['2026-11-24','19:00','','Персональные данные на сайтах — интенсив','онлайн',''],
+['2026-11-25','19:00','20:30','Креативный код — занятие 2','очно, адрес не указан','кино и визуальный сторителлинг'],
+['2026-11-26','16:00','','Единый Цифровой Экзамен — 2026','Action Digital School, онлайн',''],
+['2026-11-27','19:00','','Анализ договоров с помощью ИИ — занятие 1','онлайн, МТС Линк',''],
+['2026-11-28','10:00','13:00','ИИ-ассистент для ВКонтакте — занятие 3','онлайн, без записи',''],
+['2026-11-29','10:00','13:00','ИИ-ассистент для ВКонтакте — занятие 4','онлайн, без записи',''],
+['2026-12-02','19:00','','Анализ договоров с помощью ИИ — занятие 2','онлайн, МТС Линк',''],
+['2026-12-02','19:00','20:30','Креативный код — занятие 3','онлайн','⚠ пересекается с анализом договоров'],
+['2026-12-03','11:00','13:00','КонсультантПлюс: ИИ-помощник — вебинар','онлайн','лектор Антон Каменский'],
+['2026-12-09','19:00','20:30','Креативный код — занятие 4','очно, адрес не указан','']];
+
+const COURSES=[
+{n:'Как предотвратить насилие, травлю и кибербуллинг в школе — базовый',o:'EduHub',dl:'2026-12-04',c:'9 ак. ч, после завершения',s:['Модуль 1','Модуль 2','Модуль 3','Модуль 4','Финальный тест']},
+{n:'Что нужно знать о подростках. Курс для родителей — базовый',o:'EduHub',dl:'2026-12-04',c:'9 ак. ч, после завершения',s:['Модуль 1','Модуль 2','Модуль 3','Модуль 4','Финальный тест']},
+{n:'Продвижение в социальных сетях',o:'Техноград / МТС Линк',dl:'2026-12-14',c:'после уроков и тестов, 3–4 недели на почту',s:['Модуль 1: продвижение','Модуль 2: контент','Модуль 3: партнёры','Модуль 4: таргет','Модуль 5: аналитика','Тесты']},
+{n:'Нейросети и личный бренд: от распаковки к развитию',o:'Техноград / МТС Линк',dl:'2026-11-29',c:'активное участие + уроки и тесты',s:['Урок 1','Урок 2','Урок 3','Урок 4','Урок 5','Участие в чате']},
+{n:'Бесплатные нейросети для блога ВКонтакте',o:'Техноград / МТС Линк',dl:'2026-11-29',c:'после успешного прохождения',s:['Видеоурок 1','Видеоурок 2','Вебинар 1','Вебинар 2','Практика']},
+{n:'Практика разрешения конфликтов. Я-семья-работа-общество',o:'ТГУ',dl:'',c:'условия не указаны',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Психология призвания',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'ИИ-трансформация: эффективные решения для преподавателя',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Геймификация в бизнесе и образовании',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Арт-менеджмент: концепция и запуск проекта',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Маркетинг для стартапа: от исследований до клиентов',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']}];
+
+const RECIPES=[
+{n:'Курица с картошкой в духовке (малышка ест со сметаной)',i:['курица','картошка','сметана','чеснок']},
+{n:'Куриный суп с вермишелью',i:['курица','картошка','морковь','лук','вермишель']},
+{n:'Плов на скорую руку',i:['рис','курица','морковь','лук']},
+{n:'Паста с сыром и помидорами',i:['макароны','сыр','помидоры','чеснок']},
+{n:'Оладьи из кабачков',i:['кабачок','яйца','мука','сметана']},
+{n:'Сырники',i:['творог','яйца','мука','сметана']},
+{n:'Овсяная каша с яблоком',i:['овсянка','яблоки','молоко','мёд']},
+{n:'Тушёная капуста с сосисками',i:['капуста','сосиски','лук','томатная паста']},
+{n:'Гречка с овощами и котлетой',i:['гречка','лук','морковь','фарш']},
+{n:'Запечённая рыба с овощами',i:['рыба','картошка','морковь','сметана']},
+{n:'Салат с курицей и огурцами',i:['курица','сыр','огурцы','сметана']},
+{n:'Блины на кефире',i:['мука','яйца','кефир','молоко']}];
+
+const ADVENT=['Раскрасить зимнюю картинку','Слепить снеговика из пластилина','Наклеить снежинки на окно','Прочитать зимнюю сказку перед сном','Посмотреть мультик про зиму','Сделать открытку для бабушки','Украсить комнату гирляндой','Сделать кормушку для птиц','Вырезать снежинку вместе','Поиграть с тестом для лепки','Нарисовать Деда Мороза','Устроить домашний пикник на пледе','Сделать гирлянду из цветной бумаги','Посчитать снежинки на прогулке','Испечь печенье вместе','Нарядить ёлку','Написать письмо Деду Морозу','Устроить день пижамы и мультиков','Сделать ёлочную игрушку своими руками','Спеть новогоднюю песенку и снять видео','Фотосессия в новогодних нарядах','Собрать мешок подарков для родных','Оставить печенье и молоко Деду Морозу','Последняя дверь — встречаем праздник! 🎄'];
+
+const NY=['Купить ёлку и гирлянды','Подарки родным: список и покупка','Подарок мужу','Подарок малышке','Подарки воспитателям и логопеду','Составить меню на 31.12','Купить продукты к столу (овощи, мандарины!)','Наряд для малышки','Фотографии/открытки родным','Ёлочные игрушки докупить','Планировка 1 января: отдых без готовки?','Забронировать каникулы/билеты, если что-то планируем'];
+
+const HUSB=['Определить дату и план дня','Подарок: выбрать и купить','Торт: заказать или испечь','Ресторан / романтический ужин — забронировать','Поздравление от малышки (открытка-отпечаток!)','Пригласить гостей / созвон с роднёй'];
+
+const SOCIAL={
+'Академия семьи':['Пост: режим дня малыша — польза или миф','Разбор: как говорить с ребёнком о чувствах в 2,5 года','Опрос: как проводите выходные с детьми','Видео-совет: 3 игры для развития речи','Анонс ближайшего вебинара / вебинара LFK','Пост: «вопрос-ответ» из комментариев'],
+'Детская Афиша Железнодорожного':['Подборка событий на выходные','Куда пойти с малышом в Балашихе: 5 идей','Афиша кружков и секций: куда отдать ребёнка','Репост анонсов садика / библиотеки','Пост о зимних праздниках для детей','Обзор детской площадки или парка'],
+'Мама-юрист. Дети в праве':['Как оформить документы ребёнка через Госуслуги','Права в детском саду: что делать, если...','Разбор: заявление в садик, пошагово','Пост-история из практики','Памятка: выплаты и льготы для семей','Ответ на популярный вопрос подписчиков']};
+
+/* ===== SEED ===== */
+function seed(){
+ if(S.seeded)return;
+ S.docs=[{id:uid(),done:0,t:'Записаться к педиатру — плановый осмотр малышки',sub:'себе напомнить за неделю',type:'Малышка'},{id:uid(),done:0,t:'Стоматолог — себе',sub:'',type:'Красота'},{id:uid(),done:0,t:'Маникюр — записаться',sub:'',type:'Красота'},{id:uid(),done:0,t:'Покраска волос — записаться',sub:'',type:'Красота'},{id:uid(),done:0,t:'Своя диспансеризация / чек-ап',sub:'',type:'Себе'}];
+ S.kind=[{id:uid(),done:0,t:'Оплатить садик',sub:''},{id:uid(),done:0,t:'Сменная обувь / запасная одежда — проверить',sub:''},{id:uid(),done:0,t:'Уточнить расписание занятий и утренников',sub:''},{id:uid(),done:0,t:'Собрать папку документов (если попросят)',sub:''}];
+ S.calls=[{id:uid(),done:0,t:'Позвонить маме',sub:''},{id:uid(),done:0,t:'Уточнить зачисление на курсы ТГУ',sub:''},{id:uid(),done:0,t:'Позвонить в садик (вопрос по группе)',sub:''}];
+ S.buys=[{id:uid(),done:0,t:'Бытовое: узнать, что закончилось (порошок, губки, мешки)',sub:''}];
+ S.orders=[{id:uid(),done:0,t:'Проверить корзины Ozon/WB — сначала в избранном',sub:'маркетплейс',st:'В избранном'}];
+ S.gifts=[{id:uid(),done:0,t:'Идеи подарков к праздникам — мозговой штурм',sub:'родные'}];
+ S.estate=[{id:uid(),done:0,t:'Критерии: бюджет, район, рядом садик и парк',sub:'обсудить с мужем'}];
+ S.advent=ADVENT.map(t=>({id:uid(),t:t}));
+ S.social=[];
+ for(const net in SOCIAL)for(const t of SOCIAL[net])S.social.push({id:uid(),net:net,t:t,done:0});
+ S.seeded=1;save();
+}
+seed();
+
+/* ===== TABS ===== */
+const TABS=[['home','🏠','Мой день'],['week','🗓️','Неделя'],['routines','🔁','Рутины'],['assistant','✨','Помощник'],['inbox','⚡','Быстро записать'],['cal','📅','Календарь'],['courses','🎓','Курсы'],['social','📣','Соцсети'],['dr','🎂','ДР'],['doc','🩺','Врачи и записи'],['kind','👧','Садик'],['buy','🛍','Покупки'],['food','🥦','Продукты'],['gift','🎁','Подарки'],['fest','🎄','Праздники'],['estate','🏡','Недвижимость'],['call','📞','Звонки'],['notes','📝','Заметки'],['settings','💾','Мои данные']];
+let cur='home';
+const PRIMARY=['home','week','assistant','inbox','cal'];
+function primaryButton(id,bottom=false){const t=TABS.find(x=>x[0]===id);if(!t)return'';return '<button class="'+(cur===id?'on':'')+'" aria-current="'+(cur===id?'page':'false')+'" onclick="go(\''+id+'\')"><span class="nav-icon">'+t[1]+'</span><span>'+({home:'День',inbox:'Записать',cal:'Календарь'}[id]||t[2])+'</span></button>'}
+function renderTabs(){
+ const other=!PRIMARY.includes(cur);
+ document.getElementById('tabs').innerHTML=PRIMARY.map(x=>primaryButton(x)).join('')+'<button class="'+(other?'on':'')+'" onclick="showMore()"><span class="nav-icon">☰</span><span>Ещё</span></button>';
+ document.getElementById('bottomNav').innerHTML=['home','week','assistant','inbox'].map(x=>primaryButton(x,true)).join('')+'<button class="'+(other?'on':'')+'" onclick="showMore()"><span class="nav-icon">☰</span><span>Ещё</span></button>';
+ document.getElementById('moreGrid').innerHTML=TABS.filter(t=>!['home','week','assistant','inbox'].includes(t[0])).map(t=>'<button onclick="go(\''+t[0]+'\')"><span>'+t[1]+'</span>'+t[2]+'</button>').join('');
+}
+function showMore(){renderTabs();const o=document.getElementById('moreOverlay');o.hidden=false;document.body.classList.add('sheet-open');o.querySelector('.sheet-head button').focus()}
+function closeMore(){const o=document.getElementById('moreOverlay');o.hidden=true;document.body.classList.remove('sheet-open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMore()});
+function go(id){if(!VIEWS[id])return;closeMore();cur=id;renderTabs();render()}
+function render(){const el=document.getElementById('view');el.innerHTML=VIEWS[cur]();window.scrollTo({top:0,behavior:'instant'});if(cur==='assistant')v6showSuggestions()}
+
+function tog(key,i){S[key][i].done=S[key][i].done?0:1;save();render()}
+function del(key,i){S[key].splice(i,1);save();render()}
+function edit(key,i,f,v){S[key][i][f]=v;save()}
+function toggleSteps(ci,si){const c=COURSES[ci];if(!S.steps[c.n])S.steps[c.n]=c.s.map(()=>0);S.steps[c.n][si]=S.steps[c.n][si]?0:1;save();render()}
+
+/* ===== HOME / ДАЙДЖЕСТ ===== */
+function todayEvents(){const t=iso(new Date());const a=EVENTS.filter(e=>e[0]==t).map(e=>({time:e[1],end:e[2],n:e[3],pl:e[4],note:e[5]}));const b=S.custom.filter(e=>e.date==t).map(e=>({time:e.time||'',end:'',n:e.title,pl:'',note:'моя встреча'}));return a.concat(b)}
+function tomorrowEvents(){const d=new Date();d.setDate(d.getDate()+1);const t=iso(d);const a=EVENTS.filter(e=>e[0]==t).map(e=>({time:e[1],n:e[3],pl:e[4]}));const b=S.custom.filter(e=>e.date==t).map(e=>({time:e.time||'',n:e.title,pl:'моя встреча'}));return a.concat(b)}
+function confettiCheck(){const t=iso(new Date());if(S.confetti!=t){S.confetti=t;save();confetti();toast('Новый день — новый план ✨')}}
+function vHome(){
+ confettiCheck();
+ const n=new Date(),h=n.getHours();const hi=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
+ const ev=todayEvents();const o=openCount();
+ let out='<div class="card"><div class="big">'+hi+', Ольга! 👋</div><div class="mut">'+nice(iso(n))+'</div>';
+ out+='<div style="margin-top:10px"><button class="btn acc" onclick="copyDigest()">📋 Скопировать в заметки</button> <button class="btn" onclick="shareDigest()">📤 Поделиться</button></div></div>';
+ out+='<div class="card"><h3>🕘 Сегодня ('+ev.length+')</h3>';
+ if(!ev.length)out+='<div class="mut">Событий нет — день для своих дел 🙂</div>';
+ ev.forEach(e=>{out+='<div class="digestline"><span class="ic">🎓</span><div><b>'+(e.time?e.time+(e.end?'–'+e.end:''):'весь день')+'</b> — '+e.n+(e.pl?'<div class="mut">'+e.pl+'</div>':'')+(e.note?'<div class="mut">'+e.note+'</div>':'')+'</div></div>'});
+ out+='</div>';
+ let dl=[];COURSES.forEach((c,i)=>{if(c.dl){const d=dLeft(c.dl);if(d>=0&&d<=10)dl.push({c:c,d:d})}});
+ if(dl.length){out+='<div class="card"><h3>⏳ Дедлайны курсов</h3>';dl.forEach(x=>out+='<div class="digestline"><span class="ic">'+(x.d<=3?'🔴':'⏰')+'</span><div class="'+(x.d<=3?'warnline':'')+'">'+x.c.n+' — осталось '+x.d+' дн. (до '+nice(x.c.dl)+')</div></div>');out+='</div>'}
+ const bds=S.dr.map((d,i)=>({i:i,n:d.name,d:nextBD(d.date)})).filter(x=>x.d&&x.d.days<=7).sort((a,b)=>a.d.days-b.d.days);
+ if(bds.length){out+='<div class="card"><h3>🎂 Дни рождения</h3>';bds.forEach(b=>out+='<div class="digestline"><span class="ic">'+(b.d.days==0?'🎉':'🎈')+'</span><div>'+b.n+' — '+(b.d.days==0?'<b>СЕГОДНЯ!</b>':'через '+b.d.days+' дн.')+'</div></div>');out+='</div>'}
+ out+='<div class="card"><h3>📋 Что ждёт</h3>';
+ [['Врачи и записи',o.doc,'go(\'doc\')'],['Покупки/быт',o.buy,'go(\'buy\')'],['Заказы (Ozon/WB)',o.ord,'go(\'buy\')'],['Подарки',o.gift,'go(\'gift\')'],['Звонки',o.call,'go(\'call\')'],['Садик',o.kind,'go(\'kind\')'],['Посты в соцсети',o.soc,'go(\'social\')']].forEach(x=>{if(x[1]>0)out+='<div class="digestline"><span class="ic">☑️</span><div>'+x[0]+': <b>'+x[1]+'</b> <span class="mut" style="cursor:pointer" onclick="'+x[2]+'">открыть →</span></div></div>'});
+ out+='<div class="mut" style="margin-top:4px">Всего незакрытых: '+(o.doc+o.buy+o.ord+o.gift+o.call+o.kind+o.soc)+'</div></div>';
+ const tm=tomorrowEvents();
+ if(tm.length){out+='<div class="card"><h3>➡️ Завтра</h3>';tm.forEach(e=>out+='<div class="digestline"><span class="ic">•</span><div>'+(e.time?e.time+' ':'')+e.n+(e.pl?' <span class="mut">('+e.pl+')</span>':'')+'</div></div>');out+='</div>'}
+ return out}
+function copyDigest(){const t=digestText();const done=()=>toast('Скопировано — вставляйте в заметки ✅');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(fb)}else fb();function fb(){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done()}catch(e){toast('Не вышло — скопируйте вручную')}ta.remove()}}
+function shareDigest(){const t=digestText();if(navigator.share){navigator.share({title:'Мой день',text:t}).catch(()=>{})}else copyDigest()}
+
+/* ===== КАЛЕНДАРЬ ===== */
+let calY=new Date().getFullYear(),calM=new Date().getMonth();
+function vCal(){
+ const mn=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+ let out='<div class="card"><div class="calhead"><button class="btn" onclick="calM--;if(calM<0){calM=11;calY--}render()">←</button><b>'+mn[calM]+' '+calY+'</b><button class="btn" onclick="calM++;if(calM>11){calM=0;calY++}render()">→</button></div>';
+ const first=new Date(calY,calM,1);let shift=(first.getDay()+6)%7;const dim=new Date(calY,calM+1,0).getDate();
+ out+='<div class="grid"><div class="dow">пн</div><div class="dow">вт</div><div class="dow">ср</div><div class="dow">чт</div><div class="dow">пт</div><div class="dow">сб</div><div class="dow">вс</div>';
+ for(let i=0;i<shift;i++)out+='<div class="day"></div>';
+ for(let d=1;d<=dim;d++){const ds=calY+'-'+('0'+(calM+1)).slice(-2)+'-'+('0'+d).slice(-2);
+  const hasEv=EVENTS.some(e=>e[0]==ds)||S.custom.some(e=>e.date==ds);
+  const hasBd=S.dr.some(x=>{const n=nextBD(x.date);return n&&iso(n.date)==ds});
+  const hasDoc=S.docs.some(x=>x.date==ds&&!x.done);
+  let cls='day';if(hasEv)cls+=' ev';if(hasBd)cls+=' bd';if(hasDoc)cls+=' doc';
+  if(ds==iso(new Date()))cls+=' today';
+  out+='<div class="'+cls+'" onclick="pickDay(\''+ds+'\')">'+d+'<span class="dots">'+(hasEv?'<i style="background:#e8794a"></i>':'')+(hasBd?'<i style="background:#d96a9b"></i>':'')+(hasDoc?'<i style="background:#5b8bd0"></i>':'')+'</span></div>'}
+ out+='</div><div class="mut" style="margin-top:8px"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8794a"></i> учёба · <i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#d96a9b"></i> день рождения · <i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5b8bd0"></i> врач/запись</div></div>';
+ out+='<div id="dayinfo" class="card"></div>';
+ out+='<div class="card"><h3>➕ Своя встреча или событие</h3><div class="frm"><input type="date" id="cev_d"><input type="time" id="cev_t"><input type="text" id="cev_t2" placeholder="Что за встреча?" style="flex:2"><button class="add" onclick="addCustom()">＋</button></div></div>';
+ return out}
+function addCustom(){const d=document.getElementById('cev_d').value,t2=document.getElementById('cev_t2').value.trim(),tm=document.getElementById('cev_t').value;if(!d||!t2){toast('Нужны дата и название');return}S.custom.push({id:uid(),date:d,time:tm,title:t2});save();render();toast('Добавлено!')}
+
+/* ===== КУРСЫ ===== */
+/* ===== СОЦСЕТИ ===== */
+function vSocial(){
+ const nets=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'];
+ let out='<div class="card"><div class="mut">Контент-план по трём вашим сообществам. Идею можно отредактировать прямо в строке, галочка = опубликовано. Открой идею — она сразу войдёт в дайджест.</div></div>';
+ nets.forEach(net=>{
+  const items=S.social.filter(x=>x.net==net);const open=items.filter(x=>!x.done).length;
+  out+='<div class="card"><h3>📣 '+net+' <span class="tag '+(open?'y':'g')+'">'+(open?open+' в работе':'всё опубликовано ✓')+'</span></h3>';
+  items.forEach(x=>{const i=S.social.indexOf(x);out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'social\','+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="edit(\'social\','+i+',\'t\',this.value)"></div><button class="del" onclick="del(\'social\','+i+')">✕</button></div>'});
+  out+='<div class="frm"><input type="text" id="soc_'+btoa(unescape(encodeURIComponent(net))).replace(/=/g,'')+'" placeholder="Новая идея поста"><button class="add" onclick="addSocial(\''+esc(net)+'\')">＋</button></div></div>'});
+ return out}
+function addSocial(net){const id='soc_'+btoa(unescape(encodeURIComponent(net))).replace(/=/g,'');const el=document.getElementById(id);if(!el||!el.value.trim())return;S.social.push({id:uid(),net:net,t:el.value.trim(),done:0});save();render()}
+
+/* ===== ДР ===== */
+function vDr(){
+ let out='<div class="card"><h3>🎂 Дни рождения</h3><div class="frm"><input type="text" id="dr_n" placeholder="Имя"><input type="date" id="dr_d"><button class="add" onclick="addDr()">＋</button></div><div class="mut">Вводится один раз — дальше напоминает каждый год.</div>';
+ const items=S.dr.map((d,i)=>({i:i,n:d.name,d:nextBD(d.date)})).filter(x=>x.d).sort((a,b)=>a.d.days-b.d.days);
+ items.forEach(x=>{out+='<div class="row"><div class="txt"><div style="display:flex;gap:8px;align-items:center"><span style="font-size:20px">🎈</span><div style="flex:1"><b>'+esc(x.n)+'</b> — '+nice(iso(x.d.date))+'<div class="mut">'+(x.d.days==0?'🎉 СЕГОДНЯ! Не забудьте поздравить!':x.d.days==1?'завтра!':'через '+x.d.days+' дн.')+'</div></div></div></div><button class="del" onclick="del(\'dr\','+x.i+')">✕</button></div>'});
+ out+='</div>';
+ out+='<div class="card"><h3>💡 Поздравления</h3><div class="mut">Подсказка: в заметках можно хранить любимые поздравления и идеи подарков для каждого — зайдите во вкладку 📝 Заметки.</div></div>';
+ return out}
+function addDr(){const n=document.getElementById('dr_n').value.trim(),d=document.getElementById('dr_d').value;if(!n||!d){toast('Нужны имя и дата');return}S.dr.push({id:uid(),name:n,date:d});save();render();toast('Добавлено! 🎈')}
+
+/* ===== ВРАЧИ И ЗАПИСИ ===== */
+function vDoc(){
+ let out='<div class="card"><h3>🩺 Врачи, маникюр, красота</h3><div class="frm"><input type="text" id="dc_t" placeholder="Что и к кому"><select id="dc_type" style="flex:0 0 40%"><option>Малышка</option><option>Себе</option><option>Красота</option></select><input type="date" id="dc_d" aria-label="Дата записи"><input type="time" id="dc_time" aria-label="Время записи"><button class="add" onclick="addDoc()">＋ Добавить</button></div><div class="mut">При указании времени приложение напомнит за день, за 2 часа и за 30 минут — когда эта страница открыта.</div>';
+ S.docs.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'docs\','+i+')"><div class="txt"><input value="'+safe(x.t)+'" onchange="edit(\'docs\','+i+',\'t\',this.value)"><div class="sub"><input class="in-sub" value="'+safe(x.sub||'')+'" placeholder="адрес, что взять" onchange="edit(\'docs\','+i+',\'sub\',this.value)"></div><div class="meta"><input type="date" aria-label="Дата" value="'+safe(x.date||'')+'" onchange="edit(\'docs\','+i+',\'date\',this.value);render()"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="edit(\'docs\','+i+',\'time\',this.value);render()"></div><span class="tag '+({Себе:'b',Малышка:'p',Красота:'y'})[x.type||'Себе']+'">'+safe(x.type||'Себе')+'</span></div><button class="del" onclick="del(\'docs\','+i+')">✕</button></div>'});
+ return out+'</div>';
+}
+function addDoc(){const t=document.getElementById('dc_t').value.trim();if(!t){toast('Напишите, что за запись');return}S.docs.push({id:uid(),done:0,t,sub:'',type:document.getElementById('dc_type').value,date:document.getElementById('dc_d').value,time:document.getElementById('dc_time').value});save();render();toast('Запись добавлена')}
+
+/* ===== САДИК ===== */
+function vKind(){let out='<div class="card"><h3>👧 Детский сад</h3><div class="frm"><input type="text" id="kd_t" placeholder="Дело по садику"><input type="date" id="kd_d" style="flex:0 0 40%"><button class="add" onclick="addSimple(\'kind\',[\'kd_t\'],{sub:[\'kd_d\',\'date\']})">＋</button></div>';
+ S.kind.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'kind\','+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="edit(\'kind\','+i+',\'t\',this.value)">'+(x.date?'<div><span class="tag b">'+nice(x.date)+'</span></div>':'')+'</div><button class="del" onclick="del(\'kind\','+i+')">✕</button></div>'});
+ out+='</div>';return out}
+function addSimple(key,ids,extra){const v=document.getElementById(ids[0]).value.trim();if(!v){toast('Пустая строка');return}const it={id:uid(),done:0,t:v};if(extra&&extra.sub){const dv=document.getElementById(extra.sub[0]).value;if(dv)it[extra.sub[1]]=dv}S[key].push(it);save();render();toast('Добавлено!')}
+
+/* ===== ПОКУПКИ + ЗАКАЗЫ ===== */
+function vBuy(){
+ let out='<div class="card"><h3>🧴 Бытовое и покупки</h3><div class="frm"><input type="text" id="by_t" placeholder="Что купить (стиральный порошок, органайзер...)"><button class="add" onclick="addSimple(\'buys\',[\'by_t\'])">＋</button></div>';
+ S.buys.forEach((x,i)=>{out+=rowHtml('buys',i,x,'')});out+='</div>';
+ out+='<div class="card"><h3>📦 Заказы Ozon / Wildberries</h3><div class="frm"><input type="text" id="or_t" placeholder="Что заказать"><select id="or_st" style="flex:0 0 42%"><option>В избранном</option><option>Заказано</option><option>Едет</option><option>Получено</option></select><button class="add" onclick="addOrder()">＋</button></div>';
+ const stcol={'В избранном':'','Заказано':'y','Едет':'b','Получено':'g'};
+ S.orders.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'orders\','+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="edit(\'orders\','+i+',\'t\',this.value)"><div class="sub"><input class="in-sub" value="'+esc(x.sub||'')+'" placeholder="ссылка/артикул/размер" onchange="edit(\'orders\','+i+',\'sub\',this.value)"></div><div><span class="tag '+(stcol[x.st]||'')+'">'+esc(x.st||'В избранном')+'</span></div></div><button class="del" onclick="del(\'orders\','+i+')">✕</button></div>'});
+ out+='</div>';
+ return out}
+function addOrder(){const t=document.getElementById('or_t').value.trim();if(!t)return;S.orders.push({id:uid(),done:0,t:t,st:document.getElementById('or_st').value,sub:''});save();render();toast('В список заказов!')}
+function rowHtml(key,i,x,ph){return '<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\''+key+'\','+i+')"><div class="txt"><input value="'+esc(x.t)+'" placeholder="'+ph+'" onchange="edit(\''+key+'\','+i+',\'t\',this.value)"></div><button class="del" onclick="del(\''+key+'\','+i+')">✕</button></div>'}
+
+/* ===== ПРОДУКТЫ + РЕЦЕПТЫ ===== */
+function vFood(){
+ const have=S.groceries.map(x=>(x.t||'').toLowerCase());
+ let out='<div class="card"><h3>🥦 Список продуктов</h3><div class="frm"><input type="text" id="gr_t" placeholder="Продукт (можно с кол-вом: молоко 2л)"><button class="add" onclick="addSimple(\'groceries\',[\'gr_t\'])">＋</button></div><div class="mut">Купили — поставьте галочку, товар считается «дома».</div>';
+ S.groceries.forEach((x,i)=>{out+=rowHtml('groceries',i,x,'')});out+='</div>';
+ out+='<div class="card"><h3>🧑‍🍳 Что приготовить?</h3><div class="mut">Подбираю рецепты по тому, что есть в списке продуктов.</div>';
+ RECIPES.forEach(r=>{const matched=r.i.filter(x=>have.some(h=>h.includes(x)||x.includes(h)));const miss=r.i.filter(x=>!have.some(h=>h.includes(x)||x.includes(h)));
+  const pct=Math.round(matched.length*100/r.i.length);
+  out+='<div style="padding:8px 0;border-bottom:1px dashed #eee"><b>'+r.n+'</b> <span class="tag '+(miss.length==0?'g':matched.length?'y':'')+'">'+(miss.length==0?'всё есть!':matched.length+'/'+r.i.length)+'</span><div class="mut">нужно: '+r.i.join(', ')+'</div>';
+  if(miss.length)out+='<button class="btn small" style="margin-top:4px" onclick="addMissing(\''+esc(r.n)+'\')">＋ докупить недостающее</button>';
+  out+='</div>'});
+ out+='</div>';return out}
+function addMissing(rn){const r=RECIPES.find(x=>x.n==rn);const have=S.groceries.map(x=>(x.t||'').toLowerCase());let added=0;r.i.forEach(x=>{if(!have.some(h=>h.includes(x)||x.includes(h))){S.groceries.push({id:uid(),done:0,t:x});added++}});save();render();toast('Добавила '+added+' продуктов в список')}
+
+/* ===== ПОДАРКИ ===== */
+function vGift(){let out='<div class="card"><h3>🎁 Подарки</h3><div class="frm"><input type="text" id="gf_t" placeholder="Кому / что подарить"><button class="add" onclick="addSimple(\'gifts\',[\'gf_t\'])">＋</button></div>';
+ S.gifts.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'gifts\','+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="edit(\'gifts\','+i+',\'t\',this.value)"><div class="sub"><input class="in-sub" value="'+esc(x.sub||'')+'" placeholder="кому / повод / бюджет" onchange="edit(\'gifts\','+i+',\'sub\',this.value)"></div></div><button class="del" onclick="del(\'gifts\','+i+')">✕</button></div>'});
+ out+='<div class="mut" style="margin-top:6px">💡 Даты дней рождения смотрите во вкладке 🎂 ДР — и привязывайте подарок к конкретному человеку.</div></div>';return out}
+
+/* ===== ПРАЗДНИКИ ===== */
+function vFest(){
+ let out='<div class="card"><h3>🎄 Новый год — чек-лист</h3>';
+ S.ny=Array.isArray(S.ny)?S.ny:NY.map(t=>({id:uid(),t:t,done:0}));
+ S.ny.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="togNy('+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="editNy('+i+',this.value)"></div><button class="del" onclick="delNy('+i+')">✕</button></div>'});
+ out+='<div class="frm"><input type="text" id="ny_t" placeholder="Добавить пункт"><button class="add" onclick="addNy()">＋</button></div></div>';
+ out+='<div class="card"><h3>🎂 День рождения мужа</h3><div class="frm"><input type="date" id="hs_d" value="'+esc(S.fam.spouse||'')+'"><button class="add" onclick="setSpouse()">💾</button></div>'+(S.fam.spouse?'<div class="mut">Напомню в дайджесте за неделю до ('+nice(S.fam.spouse)+')</div>':'<div class="mut">Поставьте дату — напомню в дайджесте за неделю.</div>');
+ S.hs=Array.isArray(S.hs)?S.hs:HUSB.map(t=>({id:uid(),t:t,done:0}));
+ S.hs.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="togHs('+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="editHs('+i+',this.value)"></div><button class="del" onclick="delHs('+i+')">✕</button></div>'});
+ out+='<div class="frm"><input type="text" id="hs_t" placeholder="Добавить пункт"><button class="add" onclick="addHs()">＋</button></div></div>';
+ out+='<div class="card"><h3>🎁 Адвент-календарь для малышки (24 двери)</h3><div class="mut">Задания на каждый день перед Новым годом. Отметили — считается, что дверь открыта. Можно менять текст.</div>';
+ S.advent.forEach((x,i)=>{out+='<div class="row'+(S.adventDone[i]?' done':'')+'"><input type="checkbox" '+(S.adventDone[i]?'checked':'')+' onchange="togAdv('+i+')"><div class="txt"><div class="tag">дверь '+(i+1)+'</div><input value="'+esc(x.t)+'" onchange="editAdv('+i+',this.value)"></div><button class="del" onclick="delAdv('+i+')">✕</button></div>'});
+ out+='<div class="frm"><input type="text" id="ad_t" placeholder="Своя идея задания"><button class="add" onclick="addAdv()">＋</button></div><div class="mut">Прогресс: '+S.adventDone.filter(Boolean).length+' из '+S.advent.length+'</div></div>';
+ return out}
+function togNy(i){S.ny[i].done=S.ny[i].done?0:1;save();render()}
+function editNy(i,v){S.ny[i].t=v;save()}
+function delNy(i){S.ny.splice(i,1);save();render()}
+function addNy(){const v=document.getElementById('ny_t').value.trim();if(!v)return;S.ny.push({id:uid(),t:v,done:0});save();render()}
+function setSpouse(){S.fam.spouse=document.getElementById('hs_d').value;save();render();toast('Дата сохранена')}
+function togHs(i){S.hs[i].done=S.hs[i].done?0:1;save();render()}
+function editHs(i,v){S.hs[i].t=v;save()}
+function delHs(i){S.hs.splice(i,1);save();render()}
+function addHs(){const v=document.getElementById('hs_t').value.trim();if(!v)return;S.hs.push({id:uid(),t:v,done:0});save();render()}
+function togAdv(i){S.adventDone[i]=!S.adventDone[i];save();render();if(S.adventDone.filter(Boolean).length==S.advent.length){confetti();toast('Адвент-календарь пройден! 🎄')}}
+function editAdv(i,v){S.advent[i].t=v;save()}
+function delAdv(i){S.advent.splice(i,1);S.adventDone.splice(i,1);save();render()}
+function addAdv(){const v=document.getElementById('ad_t').value.trim();if(!v)return;S.advent.push({id:uid(),t:v});save();render()}
+
+/* ===== НЕДВИЖИМОСТЬ ===== */
+function vEstate(){let out='<div class="card"><h3>🏡 Поиск недвижимости</h3><div class="frm"><input type="text" id="es_t" placeholder="Вариант (ЖК, адрес)"><button class="add" onclick="addSimple(\'estate\',[\'es_t\'])">＋</button></div>';
+ S.estate.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="tog(\'estate\','+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="edit(\'estate\','+i+',\'t\',this.value)"><div class="sub"><input class="in-sub" value="'+esc(x.sub||'')+'" placeholder="цена / площадь / впечатление" onchange="edit(\'estate\','+i+',\'sub\',this.value)"></div></div><button class="del" onclick="del(\'estate\','+i+')">✕</button></div>'});
+ out+='<div class="mut" style="margin-top:6px">💡 Галочка = «просмотрели / обработали». В подполе удобно писать цену и плюсы-минусы, чтобы потом сравнить.</div></div>';return out}
+
+/* ===== ЗВОНКИ ===== */
+function vCall(){let out='<div class="card"><h3>📞 Звонки</h3><div class="frm"><input type="text" id="cl_t" placeholder="Кому и зачем"><button class="add" onclick="addSimple(\'calls\',[\'cl_t\'])">＋</button></div>';
+ S.calls.forEach((x,i)=>{out+=rowHtml('calls',i,x,'кому / зачем')});out+='</div>';return out}
+
+/* ===== ЗАМЕТКИ ===== */
+function vNotes(){let out='<div class="card"><h3>📝 Заметки</h3><div class="frm"><input type="text" id="nt_t" placeholder="Название заметки"><button class="add" onclick="addNote()">＋</button></div><div class="mut">Для всего, что легко забыть: рецепты, размеры одежды малышки, списки «что взять в садик».</div>';
+ S.notes.forEach((x,i)=>{out+='<div class="card" style="background:var(--soft);margin:8px 0"><div class="row" style="border:none"><div class="txt"><input style="font-weight:700" value="'+esc(x.t)+'" onchange="edit(\'notes\','+i+',\'t\',this.value)"></div><button class="del" onclick="del(\'notes\','+i+')">✕</button></div><textarea placeholder="текст заметки..." onchange="edit(\'notes\','+i+',\'body\',this.value)">'+esc(x.body||'')+'</textarea></div>'});
+ out+='</div>';return out}
+function addNote(){const v=document.getElementById('nt_t').value.trim();if(!v)return;S.notes.push({id:uid(),t:v,body:''});save();render();toast('Заметка создана')}
+
+/* ===== НАПОМИНАНИЯ ===== */
+function remind(){
+ if(!S.bell)return;
+ const now=new Date(),day=iso(now),msgs=[];
+ const notify=(key,msg)=>{const signature=day+'|'+key;if(!remind._seen[signature]){remind._seen[signature]=1;msgs.push(msg)}};
+ function windowNotice(date,time,label,prefix){
+  if(!date||!time)return;
+  const when=new Date(date+'T'+time+':00');const minutes=(when-now)/60000;
+  if(minutes>=0&&minutes<=15)notify(prefix+'|15|'+date+'|'+time,'Через 15 минут: '+label);
+ }
+ EVENTS.forEach(e=>windowNotice(e[0],e[1],e[3],'study'));
+ S.custom.forEach(e=>windowNotice(e.date,e.time,e.title,'meeting|'+e.id));
+ S.docs.filter(x=>!x.done&&x.date).forEach(x=>{
+  if(!x.time){if(x.date===day)notify('doc|day|'+x.id,'Сегодня запись: '+x.t+' (время не указано)');return}
+  const when=new Date(x.date+'T'+x.time+':00');const min=(when-now)/60000;
+  if(min>=0&&min<=30)notify('doc|30|'+x.id,'Через 30 минут: '+x.t+' ('+x.time+')');
+  else if(min>30&&min<=120)notify('doc|120|'+x.id,'Через 2 часа: '+x.t+' ('+x.time+')');
+  const nextDay=iso(new Date(now.getFullYear(),now.getMonth(),now.getDate()+1));
+  if(x.date===nextDay)notify('doc|eve|'+x.id,'Завтра в '+x.time+': '+x.t);
+ });
+ const spouse=spouseNext();
+ if(spouse&&[7,3,1,0].includes(spouse.days))notify('spouse|'+spouse.days,spouse.days===0?'Сегодня день рождения супруга!':'До дня рождения супруга '+spouse.days+' дн.');
+ S.dr.forEach(x=>{const b=nextBD(x.date);if(b&&[7,3,1,0].includes(b.days))notify('birthday|'+x.id+'|'+b.days,(b.days===0?'Сегодня ДР: ':'Скоро ДР: ')+x.name)});
+ const due=S.inbox.filter(x=>!x.done&&x.due===day&&x.priority==='срочно');
+ if(due.length)notify('urgent','Срочных задач сегодня: '+due.length);
+ if(msgs.length)showReminderNotice(msgs);
+}
+function showReminderNotice(messages){
+ let panel=document.getElementById('reminderPanel');
+ if(!panel){panel=document.createElement('div');panel.id='reminderPanel';panel.style.cssText='position:fixed;z-index:100;right:12px;bottom:12px;max-width:min(380px,calc(100vw - 24px));background:white;border:1px solid #e4d8c7;border-radius:14px;box-shadow:0 8px 30px #0002;padding:12px 14px;font-size:14px';document.body.appendChild(panel)}
+ panel.innerHTML='<b>🔔 Напоминания</b><button style="float:right;border:none;background:none;font-size:19px;cursor:pointer" onclick="this.parentNode.remove()" aria-label="Закрыть">×</button>'+messages.map(x=>'<div style="margin-top:8px">'+safe(x)+'</div>').join('');
+}
+function spouseNext(){return S.fam&&S.fam.spouse?nextBD(S.fam.spouse):null}
+remind._seen={};
+setInterval(remind,60000);
+
+/* ===== ПРАКТИЧЕСКАЯ АВТОМАТИЗАЦИЯ v3 ===== */
+S.inbox=Array.isArray(S.inbox)?S.inbox:[];
+if(Array.isArray(S.courseDefinitions)){S.courseDefinitions.forEach(x=>{const c=COURSES.find(y=>y.n===x.n);if(c&&Array.isArray(x.s))c.s=x.s})}
+S.settings=S.settings||{minimizeIdeas:true};
+const CSS_MORE=document.createElement('style');
+CSS_MORE.textContent=`.quick{display:flex;gap:6px}.quick input{flex:1;min-width:0;border:1px solid #ddd3c2;border-radius:10px;padding:11px;font-size:15px}.quick button{border:0;background:#e8794a;color:#fff;border-radius:10px;padding:10px}.qitem{padding:10px 0;border-bottom:1px solid #f0e9e0}.qitem:last-child{border:0}.meta{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}.meta input,.meta select{max-width:100%;padding:7px;border:1px solid #e1d5c5;border-radius:8px;background:white;font-size:13px}.mini{border:0;border-radius:8px;padding:7px;background:#f3ece3;color:#3d3a36}.pill{display:inline-block;padding:3px 8px;background:#f3ece3;border-radius:20px;font-size:12px;margin:2px}.overdue{color:#b22a2a}.section-hint{font-size:12px;color:#8a857c;margin:6px 0}.danger{color:#b22a2a}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px}.chipbutton{border:1px solid #ddd3c2;padding:6px 9px;background:#fff;border-radius:8px;font-size:12px}`;
+document.head.appendChild(CSS_MORE);
+function safe(v){return esc(v).replace(/'/g,'&#39;').replace(/>/g,'&gt;')}
+function dueLabel(x){if(!x.due)return 'без срока';const left=dLeft(x.due);return left<0?'просрочено на '+(-left)+' дн.':left===0?'сегодня':left===1?'завтра':nice(x.due)}
+function inboxSort(a,b){const k=x=>x.done?3:x.due?(dLeft(x.due)<0?0:dLeft(x.due)===0?1:2):2;return k(a)-k(b)||(a.due||'9999').localeCompare(b.due||'9999')}
+function addInbox(){const el=document.getElementById('quickTask');if(!el)return;const t=el.value.trim();if(!t)return;S.inbox.unshift({id:uid(),t,done:0,due:'',priority:'обычно',category:'Личное',added:iso(new Date())});save();render();toast('Записано — не потеряется');}
+function quickInbox(){return `<div class="quick"><input id="quickTask" placeholder="Что нужно не забыть?" onkeydown="if(event.key==='Enter')addInbox()"><button onclick="addInbox()">＋ Добавить</button></div>`}
+function updInbox(id,field,value){const item=S.inbox.find(x=>x.id===id);if(!item)return;item[field]=value;save();render()}
+function removeInbox(id){S.inbox=S.inbox.filter(x=>x.id!==id);save();render()}
+function moveTask(id,when){const x=S.inbox.find(x=>x.id===id);if(!x)return;if(x.due&&x.due!==when&&!x.originalDue)x.originalDue=x.due;x.due=when;save();render();toast('Задача перенесена')}
+function moveOverdueToToday(){const day=iso(new Date());let count=0;S.inbox.forEach(x=>{if(!x.done&&x.due&&x.due<day){if(!x.originalDue)x.originalDue=x.due;x.due=day;count++}});save();render();toast('Перенесено задач: '+count)}
+function tomorrowISO(){const d=new Date();d.setDate(d.getDate()+1);return iso(d)}
+function taskHtml(x){const cats=['Личное','Малышка','Здоровье','Садик','Дом','Покупки','Подарки','Учёба','Академия семьи','Детская афиша','Мама-юрист','Недвижимость'];const priorities=['обычно','важно','срочно'];
+ return `<div class="qitem" style="${x.done?'opacity:.55':''}"><div class="topline"><label style="display:flex;gap:8px;align-items:flex-start;flex:1"><input type="checkbox" ${x.done?'checked':''} onchange="updInbox('${x.id}','done',this.checked?1:0)" style="width:18px;height:18px"><span style="${x.done?'text-decoration:line-through':''}">${safe(x.t)}</span></label><button class="mini" title="Удалить" onclick="removeInbox('${x.id}')">✕</button></div><div class="meta"><select aria-label="Категория" onchange="updInbox('${x.id}','category',this.value)">${cats.map(c=>`<option ${x.category===c?'selected':''}>${c}</option>`).join('')}</select><input aria-label="Срок" type="date" value="${safe(x.due||'')}" onchange="updInbox('${x.id}','due',this.value)"><select aria-label="Приоритет" onchange="updInbox('${x.id}','priority',this.value)">${priorities.map(p=>`<option ${x.priority===p?'selected':''}>${p}</option>`).join('')}</select><select aria-label="Время на задачу" onchange="updInbox('${x.id}','minutes',Number(this.value))">${[5,10,15,25,40,60,90].map(m=>`<option value="${m}" ${(Number(x.minutes)||15)===m?'selected':''}>${m} мин</option>`).join('')}</select></div><div class="section-hint ${x.due&&dLeft(x.due)<0&&!x.done?'overdue':''}">${dueLabel(x)}${x.originalDue?' · исходный срок '+nice(x.originalDue):''}</div>${!x.done&&x.due&&dLeft(x.due)<0?`<button class="mini" onclick="moveTask('${x.id}',iso(new Date()))">↪ На сегодня</button> <button class="mini" onclick="moveTask('${x.id}',tomorrowISO())">На завтра</button>`:''}</div>`
+}
+function vInbox(){const open=S.inbox.filter(x=>!x.done).sort(inboxSort);const done=S.inbox.filter(x=>x.done);const missed=open.filter(x=>x.due&&dLeft(x.due)<0).length;return `<div class="card"><h3>⚡ Записать мысль за несколько секунд</h3>${quickInbox()}<div class="section-hint">Сначала записывай, позже назначай дату, категорию и приоритет.</div></div><div class="card"><h3>📥 Мои задачи (${open.length})</h3>${missed?`<p class="section-hint">${missed} незавершённых дел с прошедшим сроком продолжают отображаться. <button class="mini" onclick="moveOverdueToToday()">↪ Все на сегодня</button></p>`:''}${open.length?open.map(taskHtml).join(''):'<div class="mut">Пока всё разобрано.</div>'}</div><details class="card"><summary>✅ Выполнено (${done.length})</summary>${done.map(taskHtml).join('')}</details>`}
+function exportData(){const payload={format:'olga-planner-backup-v4.2',exportedAt:new Date().toISOString(),state:S};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='ezhednevnik-olga-backup-'+iso(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);toast('Резервная копия создана')}
+function importData(ev){const f=ev.target.files&&ev.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const parsed=JSON.parse(reader.result);const data=parsed.state||parsed;if(!Array.isArray(data.custom)||!Array.isArray(data.social)||!Array.isArray(data.docs))throw Error('Это не резервная копия ежедневника');if(!confirm('Заменить текущие данные данными из резервной копии? Перед этим рекомендуется экспортировать текущие.'))return;S=Object.assign(def(),data);S.inbox=Array.isArray(S.inbox)?S.inbox:[];S.routines=Array.isArray(S.routines)?S.routines:[];S.mealPlan=S.mealPlan&&typeof S.mealPlan==='object'&&!Array.isArray(S.mealPlan)?S.mealPlan:{};S.recipeCustom=Array.isArray(S.recipeCustom)?S.recipeCustom:[];save();render();toast('Данные восстановлены')}catch(e){alert('Не удалось импортировать файл: '+e.message)}};reader.readAsText(f)}
+function vFoodPlus(){const have=S.groceries.filter(x=>x.done).map(x=>(x.t||'').toLowerCase());const shopping=S.groceries.filter(x=>!x.done);const home=S.groceries.filter(x=>x.done);
+ let out='<div class="card"><h3>🛒 Купить продукты</h3><div class="frm"><input type="text" id="gr_t" placeholder="Что купить и сколько"><button class="add" onclick="addSimple(\'groceries\',[\'gr_t\'])">＋</button></div><div class="section-hint">Отметь купленное галочкой — продукт переместится в запасы дома.</div>';
+ shopping.forEach(x=>out+=rowHtml('groceries',S.groceries.indexOf(x),x,''));out+='</div><div class="card"><h3>🏠 Есть дома ('+home.length+')</h3>';
+ home.forEach(x=>out+=rowHtml('groceries',S.groceries.indexOf(x),x,''));out+='</div><div class="card"><h3>🍳 Что можно приготовить</h3><div class="section-hint">Сопоставление примерное: проверяй количество и свежесть продуктов.</div>';
+ RECIPES.map(r=>({r,matched:r.i.filter(i=>have.some(h=>h.includes(i)||i.includes(h)))})).sort((a,b)=>(b.matched.length/b.r.i.length)-(a.matched.length/a.r.i.length)).forEach(({r,matched})=>{const miss=r.i.filter(x=>!matched.includes(x));out+='<div class="qitem"><b>'+safe(r.n)+'</b> <span class="pill">'+(miss.length?'есть '+matched.length+'/'+r.i.length:'всё есть')+'</span><div class="section-hint">'+(miss.length?'Докупить: '+miss.join(', '):'Все основные ингредиенты отмечены дома')+'</div>'+(miss.length?'<button class="mini" onclick="addMissing(\''+safe(r.n)+'\')">＋ В список покупок</button>':'')+'</div>'});return out+'</div>'}
+function deleteCustom(id){S.custom=S.custom.filter(e=>e.id!==id);save();render()}
+/* ===== v4.2: прямые функции без обёрток над HTML ===== */
+function linkKeyCourse(i){return 'course:'+COURSES[i].n}
+function linkKeyEvent(i){return 'event:'+EVENTS[i][0]+'|'+EVENTS[i][3]}
+function getSavedLink(key){return (S.savedLinks||{})[key]||''}
+function normalizeLink(raw){const v=(raw||'').trim();if(!v)return '';try{const u=new URL(v);return ['https:','http:'].includes(u.protocol)?u.href:null}catch(e){return null}}
+function saveEventLink(key,inputId){const el=document.getElementById(inputId);if(!el)return;const url=normalizeLink(el.value);if(url===null){toast('Введите полную ссылку с https://');return}if(!S.savedLinks)S.savedLinks={};if(url)S.savedLinks[key]=url;else delete S.savedLinks[key];save();render();toast(url?'Ссылка сохранена':'Ссылка удалена')}
+function linkButton(key){const url=normalizeLink(getSavedLink(key));return url?'<a class="btn g" target="_blank" rel="noopener noreferrer" href="'+safe(url)+'">↗ Открыть занятие</a>':''}
+function linkEditor(key,id){return '<div class="frm" style="align-items:center"><input id="'+id+'" type="url" inputmode="url" value="'+safe(getSavedLink(key))+'" placeholder="Ссылка https://…" aria-label="Ссылка на занятие"><button class="btn" onclick="saveEventLink(\''+safe(key)+'\',\''+id+'\')">💾 Сохранить</button>'+linkButton(key)+'</div>'}
+function eventsLinksPanel(){const evs=EVENTS.map((e,i)=>({e,i})).filter(x=>dLeft(x.e[0])>=-1);let out='<div class="card"><h3>🔗 Ссылки на будущие занятия</h3><div class="mut">Добавляй ссылки из личных писем регистрации; пароли не сохраняй.</div>';
+ evs.forEach(({e,i})=>out+='<div class="qitem"><b>'+safe(nice(e[0]))+' '+safe(e[1])+' — '+safe(e[3])+'</b>'+linkEditor(linkKeyEvent(i),'link_event_'+i)+'</div>');return out+'</div>'}
+function deleteCustom(id){S.custom=S.custom.filter(e=>e.id!==id);save();render()}
+function vCalPlus(){let html=vCal();html+='<div class="card"><h3>📍 Мои события</h3>';[...S.custom].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>html+='<div class="qitem"><b>'+safe(nice(e.date))+' '+safe(e.time||'')+'</b> — '+safe(e.title)+' <button class="mini" onclick="deleteCustom(\''+e.id+'\')">✕</button></div>');return html+'</div>'+eventsLinksPanel()}
+function vHomePlus(){
+ const n=new Date(),today=iso(n),tasks=S.inbox.filter(x=>!x.done).sort(inboxSort);
+ const priority=tasks.filter(x=>x.due&&dLeft(x.due)<=1||x.priority==='важно'||x.priority==='срочно');
+ const overdue=tasks.filter(x=>x.due&&dLeft(x.due)<0);
+ const docs=S.docs.filter(x=>!x.done&&x.date&&dLeft(x.date)>=0&&dLeft(x.date)<=7).sort((a,b)=>a.date.localeCompare(b.date));
+ const spouse=spouseNext();
+ const meetings=EVENTS.filter(e=>e[0]===today).concat(S.custom.filter(e=>e.date===today).map(e=>[e.date,e.time,'',e.title,'Моя встреча','']));
+ let out='<div class="card"><h3>⚡ Не забыть</h3>'+quickInbox()+'</div>';
+ out+='<div class="card"><div class="topline"><h3>🎯 Главное сейчас</h3><button class="chipbutton" onclick="go(\'inbox\')">Все задачи →</button></div>';
+ out+=priority.slice(0,7).map(x=>'<div class="qitem"><label><input type="checkbox" onchange="updInbox(\''+x.id+'\',\'done\',this.checked?1:0)"> <b>'+safe(x.t)+'</b></label><div class="section-hint">'+safe(x.category)+' · '+safe(dueLabel(x))+' · '+safe(x.priority)+'</div></div>').join('')||'<div class="mut">Нет срочных задач: можно выбрать дело из общего списка.</div>';
+ out+='</div>';
+ if(overdue.length)out+='<div class="card"><h3 class="danger">↪ Перенос незавершённых дел: '+overdue.length+'</h3><p class="mut">Они не пропадают и остаются на главном экране. Первоначальный срок сохраняется при переносе.</p><button class="btn" onclick="moveOverdueToToday()">Перенести все на сегодня</button> <button class="btn" onclick="go(\'inbox\')">По одному</button></div>';
+ out+='<div class="card"><h3>📅 Сегодня ('+meetings.length+')</h3>';
+ meetings.forEach(e=>out+='<div class="digestline"><b>'+safe(e[1]||'весь день')+'</b> — '+safe(e[3])+'</div>');if(!meetings.length)out+='<div class="mut">Мероприятий нет.</div>';out+='</div>';
+ const links=EVENTS.map((e,i)=>({e,i})).filter(({e,i})=>e[0]===today&&normalizeLink(getSavedLink(linkKeyEvent(i))));
+ if(links.length)out+='<div class="card"><h3>🔗 Подключиться сегодня</h3>'+links.map(({e,i})=>'<div class="qitem">'+safe(e[3])+' '+linkButton(linkKeyEvent(i))+'</div>').join('')+'</div>';
+ if(spouse&&spouse.days<=30)out+='<div class="card"><h3>🎂 День рождения супруга</h3><p>'+safe(nice(iso(spouse.date)))+' — через '+spouse.days+' дн.</p><button class="btn" onclick="go(\'fest\')">Подготовка</button></div>';
+ if(docs.length)out+='<div class="card"><h3>🩺 Записи на ближайшие 7 дней</h3>'+docs.map(x=>'<div class="digestline">'+safe(nice(x.date))+' '+safe(x.time||'')+' — '+safe(x.t)+'</div>').join('')+'</div>';
+ out+='<details class="card"><summary><b>📂 Полный дайджест</b></summary>'+vHome()+'</details>';return out;
+}
+function persistCourseDefinitions(){S.courseDefinitions=COURSES.map(c=>({n:c.n,s:[...c.s]}));save()}
+function renStep(ci,si,value){const c=COURSES[ci];if(!c||!c.s[si])return;c.s[si]=value;persistCourseDefinitions()}
+function addStep(ci){const c=COURSES[ci],el=document.getElementById('cs'+ci);if(!c||!el||!el.value.trim())return;c.s.push(el.value.trim());if(!Array.isArray(S.steps[c.n]))S.steps[c.n]=[];S.steps[c.n].push(0);persistCourseDefinitions();render()}
+function deleteStep(ci,si){const c=COURSES[ci];if(!c||si<0||si>=c.s.length)return;c.s.splice(si,1);if(!Array.isArray(S.steps[c.n]))S.steps[c.n]=[];S.steps[c.n].splice(si,1);persistCourseDefinitions();render()}
+function vCourses(){let out='<div class="card"><h3>🎓 Курсы и ссылки</h3><div class="mut">Адрес учебного кабинета можно сохранить под курсом. Не сохраняй пароль.</div></div>';
+ COURSES.forEach((c,ci)=>{if(!S.steps[c.n])S.steps[c.n]=c.s.map(()=>0);const progress=S.steps[c.n],done=progress.filter(Boolean).length;out+='<div class="card"><h3>'+safe(c.n)+'</h3><div class="mut">'+safe(c.o)+'</div>'+(c.dl?'<div class="mut">'+(dLeft(c.dl)<0?'Срок прошёл':'До '+nice(c.dl))+'</div>':'')+linkEditor(linkKeyCourse(ci),'link_course_'+ci)+'<div class="prog"><i style="width:'+(100*done/Math.max(1,c.s.length))+'%"></i></div><div class="mut">'+done+' из '+c.s.length+'</div>';
+ c.s.forEach((st,si)=>out+='<div class="row"><input type="checkbox" '+(progress[si]?'checked':'')+' onchange="toggleSteps('+ci+','+si+')"><div class="txt"><input value="'+safe(st)+'" onchange="renStep('+ci+','+si+',this.value)"></div><button class="del" onclick="deleteStep('+ci+','+si+')">✕</button></div>');
+ out+='<div class="frm"><input id="cs'+ci+'" placeholder="Новый шаг"><button class="add" onclick="addStep('+ci+')">＋</button></div></div>'});return out;
+}
+function pickDay(ds){let out='<h3>'+safe(nice(ds))+'</h3>',count=0;
+ EVENTS.forEach((e,i)=>{if(e[0]===ds){count++;out+='<div class="qitem">🎓 '+safe(e[1]||'весь день')+' — '+safe(e[3])+' '+linkButton(linkKeyEvent(i))+'</div>'}});
+ S.custom.filter(e=>e.date===ds).forEach(e=>{count++;out+='<div class="qitem">📌 '+safe(e.time||'')+' '+safe(e.title)+'</div>'});
+ S.docs.filter(x=>x.date===ds&&!x.done).forEach(x=>{count++;out+='<div class="qitem">🩺 '+safe(x.time||'')+' '+safe(x.t)+'</div>'});
+ S.dr.forEach(x=>{const b=nextBD(x.date);if(b&&iso(b.date)===ds){count++;out+='<div>🎂 '+safe(x.name)+'</div>'}});
+ document.getElementById('dayinfo').innerHTML=out+(count?'':'<div class="mut">Нет записей.</div>');
+}
+function digestText(){const n=new Date();let out='Ежедневник — '+nice(iso(n));const appointments=todayEvents();out+='\n\nСЕГОДНЯ:';
+ appointments.forEach(x=>out+='\n• '+(x.time||'')+' '+x.n);if(!appointments.length)out+='\n• Нет мероприятий';
+ const tasks=S.inbox.filter(x=>!x.done).sort(inboxSort);out+='\n\nЗАДАЧИ ('+tasks.length+'):';tasks.forEach(x=>out+='\n• '+x.t+' — '+dueLabel(x)+(x.originalDue?' (было '+nice(x.originalDue)+')':''));
+ const spouse=spouseNext();if(spouse&&spouse.days<=30)out+='\n\nДР супруга — через '+spouse.days+' дн.';
+ const docs=S.docs.filter(x=>!x.done&&x.date&&dLeft(x.date)>=0&&dLeft(x.date)<=7);if(docs.length)out+='\n\nЗАПИСИ: '+docs.map(x=>'\n• '+nice(x.date)+' '+(x.time||'')+' '+x.t).join('');
+ const o=openCount();out+='\n\nНЕЗАКРЫТЫЕ ДЕЛА: '+Object.entries(o).map(([k,v])=>k+': '+v).join(', ');return out;
+}
+function openCount(){return {doc:S.docs.filter(x=>!x.done).length,buy:S.buys.filter(x=>!x.done).length,ord:S.orders.filter(x=>!x.done).length,gift:S.gifts.filter(x=>!x.done).length,call:S.calls.filter(x=>!x.done).length,kind:S.kind.filter(x=>!x.done).length,soc:S.social.filter(x=>!x.done).length,inbox:S.inbox.filter(x=>!x.done).length}}
+function vSettings(){return '<div class="card"><h3>💾 Резервная копия</h3><p>Данные находятся только в этом браузере. Перед переходом на новое устройство скачай резервную копию.</p><button class="btn g" onclick="exportData()">⬇ Скачать данные JSON</button><p class="mut">В резервной копии могут быть личные сведения.</p></div><div class="card"><h3>♻ Восстановление</h3><p>Импорт заменит текущие данные.</p><input type="file" accept=".json,application/json" onchange="importData(event)"></div><div class="card"><h3>🔔 Напоминания</h3><p>Переключатель находится в верхней части экрана. Уведомления работают только пока файл открыт в браузере.</p></div>'}
+/* ===== v5: семейное планирование, меню, рутины, контент-пайплайн ===== */
+S.routines=Array.isArray(S.routines)?S.routines:[];
+S.mealPlan=S.mealPlan&&typeof S.mealPlan==='object'&&!Array.isArray(S.mealPlan)?S.mealPlan:{};
+S.recipeCustom=Array.isArray(S.recipeCustom)?S.recipeCustom:[];
+S.familyPeople=Array.isArray(S.familyPeople)?S.familyPeople:[];
+const V5_STYLE=document.createElement('style');
+V5_STYLE.textContent=`.v5week{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px}.v5day{padding:10px;background:#fff;border:1px solid #e9dfd3;border-radius:12px}.v5cardline{padding:8px 0;border-bottom:1px dashed #e6dbd0}.v5cardline:last-child{border:0}.v5tag{font-size:12px;color:#746c61}.v5field{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;align-items:center}.v5field input,.v5field select{min-width:0;flex:1;border:1px solid #ddd3c2;border-radius:8px;padding:8px;background:white;font:inherit}.v5hint{background:#f6f1e7;border-radius:10px;padding:10px;font-size:13px;color:#6d6254}.v5action{border:0;border-radius:9px;background:#f3ece3;padding:7px 10px;cursor:pointer}.v5chip{display:inline-block;padding:3px 7px;margin:2px;background:#f0e8de;border-radius:8px;font-size:12px}`;
+document.head.appendChild(V5_STYLE);
+function v5dayISO(offset){const d=new Date();d.setDate(d.getDate()+offset);return iso(d)}
+function v5dayOfWeek(ds){return ['вс','пн','вт','ср','чт','пт','сб'][new Date(ds+'T12:00:00').getDay()]}
+function v5recipes(){return RECIPES.concat(S.recipeCustom)}
+function v5mealOptions(current){return '<option value="">— Не выбрано —</option>'+v5recipes().map(r=>'<option value="'+safe(r.n)+'" '+(current===r.n?'selected':'')+'>'+safe(r.n)+'</option>').join('')}
+function v5setMeal(ds,value){if(value)S.mealPlan[ds]=value;else delete S.mealPlan[ds];save();render()}
+function v5addRecipe(){const name=document.getElementById('v5recipeName').value.trim(),raw=document.getElementById('v5recipeIngredients').value.trim();if(!name||!raw){toast('Укажите название и ингредиенты через запятую');return}if(v5recipes().some(x=>x.n.toLowerCase()===name.toLowerCase())){toast('Рецепт с таким названием уже есть');return}S.recipeCustom.push({n:name,i:raw.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean)});save();render();toast('Свой рецепт добавлен')}
+function v5missingIngredients(days){const home=S.groceries.filter(x=>x.done).map(x=>(x.t||'').toLowerCase());const already=S.groceries.filter(x=>!x.done).map(x=>(x.t||'').toLowerCase());const proposed=new Map();days.forEach(ds=>{const r=v5recipes().find(x=>x.n===S.mealPlan[ds]);if(!r)return;r.i.forEach(i=>{const ing=i.toLowerCase();if(!home.some(h=>h.includes(ing)||ing.includes(h))&&!already.some(h=>h.includes(ing)||ing.includes(h)))proposed.set(ing,ing)})});return [...proposed.values()]}
+function v5addMealShopping(){const days=Array.from({length:7},(_,i)=>v5dayISO(i));const missing=v5missingIngredients(days);missing.forEach(t=>S.groceries.push({id:uid(),done:0,t}));save();render();toast('Добавлено продуктов: '+missing.length)}
+function v5week(){const days=Array.from({length:7},(_,i)=>v5dayISO(i));let out='<div class="card"><h3>🗓️ Ближайшие семь дней</h3><div class="v5hint">Здесь вместе видны встречи, врач, задачи, меню и повторяющиеся дела. Никаких придуманных записей — только сохранённые данные.</div></div><div class="v5week">';
+ days.forEach(ds=>{const ev=EVENTS.filter(e=>e[0]===ds).map(e=>(e[1]||'')+' '+e[3]).concat(S.custom.filter(e=>e.date===ds).map(e=>(e.time||'')+' '+e.title));const docs=S.docs.filter(x=>!x.done&&x.date===ds).map(x=>(x.time||'')+' '+x.t);const tasks=S.inbox.filter(x=>!x.done&&x.due===ds).map(x=>x.t);const posts=S.social.filter(x=>!x.done&&x.publishDate===ds).map(x=>'📣 '+x.net+': '+x.t);const routines=v5routinesFor(ds).map(x=>'↻ '+x.t);out+='<div class="v5day"><b>'+safe(v5dayOfWeek(ds))+' · '+safe(nice(ds))+'</b>';
+ [...ev.map(x=>'📅 '+x),...docs.map(x=>'🩺 '+x),...tasks.map(x=>'☑ '+x),...posts,...routines].forEach(x=>out+='<div class="v5cardline">'+safe(x)+'</div>');out+='<div class="v5field"><label style="width:100%;font-size:12px">🍽️ Что приготовить</label><select aria-label="Меню на '+safe(ds)+'" onchange="v5setMeal(\''+ds+'\',this.value)">'+v5mealOptions(S.mealPlan[ds])+'</select></div></div>'});out+='</div>';
+ const missing=v5missingIngredients(days);out+='<div class="card"><h3>🛒 Недостающие продукты для меню</h3>'+(missing.length?'<p>'+missing.map(safe).join(', ')+'</p><button class="btn g" onclick="v5addMealShopping()">＋ Добавить недостающее в покупки</button>':'<p class="mut">Выбери блюда на неделю. Если ингредиенты уже дома или в списке покупок, они не дублируются.</p>')+'</div>';
+ out+='<div class="card"><h3>📒 Свой рецепт</h3><div class="v5field"><input id="v5recipeName" placeholder="Название блюда"><input id="v5recipeIngredients" placeholder="Ингредиенты через запятую"><button class="btn" onclick="v5addRecipe()">Сохранить рецепт</button></div><p class="mut">Количество продуктов пока не рассчитывается автоматически. Рецепты сохраняются локально.</p></div>';return out;
+}
+function v5dueRoutine(r,ds){if(!r.active)return false;if(r.start&&ds<r.start)return false;const day=new Date(ds+'T12:00:00');if(r.freq==='daily')return true;if(r.freq==='weekly')return day.getDay()===Number(r.weekday);if(r.freq==='monthly')return day.getDate()===Number(r.monthday);return false}
+function v5routinesFor(ds){return S.routines.filter(x=>v5dueRoutine(x,ds)&&!(x.completed||[]).includes(ds))}
+function v5addRoutine(){const t=document.getElementById('v5rt').value.trim();if(!t)return;const freq=document.getElementById('v5rf').value;S.routines.push({id:uid(),t,freq,weekday:new Date().getDay(),monthday:new Date().getDate(),start:iso(new Date()),active:true,completed:[]});save();render();toast('Повторяющееся дело создано')}
+function v5updateRoutine(id,field,value){const x=S.routines.find(r=>r.id===id);if(!x)return;x[field]=value;save();render()}
+function v5completeRoutine(id,ds){const x=S.routines.find(r=>r.id===id);if(!x)return;x.completed=Array.isArray(x.completed)?x.completed:[];if(!x.completed.includes(ds))x.completed.push(ds);save();render()}
+function v5deleteRoutine(id){if(!confirm('Удалить повторяющееся дело?'))return;S.routines=S.routines.filter(x=>x.id!==id);save();render()}
+function v5routines(){const today=iso(new Date()),due=v5routinesFor(today);let out='<div class="card"><h3>🔁 Домашние привычки и регулярные дела</h3><p class="v5hint">Пример: оплатить садик каждый месяц, проверить сменную одежду по воскресеньям, купить бытовые товары. Повторы создаются только после твоего добавления.</p><div class="v5field"><input id="v5rt" placeholder="Например: оплатить садик"><select id="v5rf"><option value="daily">Каждый день</option><option value="weekly">Каждую неделю</option><option value="monthly">Каждый месяц</option></select><button class="btn g" onclick="v5addRoutine()">＋ Добавить</button></div></div>';
+ out+='<div class="card"><h3>Сегодня · '+due.length+'</h3>'+(due.map(r=>'<div class="v5cardline"><label><input type="checkbox" onchange="v5completeRoutine(\''+r.id+'\',\''+today+'\')"> '+safe(r.t)+'</label></div>').join('')||'<p class="mut">На сегодня незакрытых регулярных дел нет.</p>')+'</div>';
+ out+='<div class="card"><h3>Все повторы</h3>';S.routines.forEach(r=>{out+='<div class="v5cardline"><b>'+safe(r.t)+'</b><div class="v5field"><select onchange="v5updateRoutine(\''+r.id+'\',\'freq\',this.value)">'+[['daily','Каждый день'],['weekly','Каждую неделю'],['monthly','Каждый месяц']].map(([v,l])=>'<option value="'+v+'" '+(r.freq===v?'selected':'')+'>'+l+'</option>').join('')+'</select>';
+ if(r.freq==='weekly')out+='<select aria-label="День недели" onchange="v5updateRoutine(\''+r.id+'\',\'weekday\',Number(this.value))">'+[['1','Пн'],['2','Вт'],['3','Ср'],['4','Чт'],['5','Пт'],['6','Сб'],['0','Вс']].map(([v,l])=>'<option value="'+v+'" '+(Number(r.weekday)===Number(v)?'selected':'')+'>'+l+'</option>').join('')+'</select>';
+ if(r.freq==='monthly')out+='<input type="number" min="1" max="28" aria-label="День месяца" value="'+safe(r.monthday)+'" onchange="v5updateRoutine(\''+r.id+'\',\'monthday\',Math.max(1,Math.min(28,Number(this.value)||1)))">';
+ out+='<label><input type="checkbox" '+(r.active?'checked':'')+' onchange="v5updateRoutine(\''+r.id+'\',\'active\',this.checked)"> Вкл.</label><button class="mini" onclick="v5deleteRoutine(\''+r.id+'\')">✕</button></div></div>'});return out+'</div>';
+}
+function v5setSocial(id,field,value){const x=S.social.find(x=>String(x.id)===String(id));if(!x)return;x[field]=value;if(field==='status')x.done=value==='Опубликовано'?1:0;if(field==='done')x.status=value?'Опубликовано':'Идея';save();render()}
+function v5social(){const nets=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'];let out='<div class="card"><h3>📣 Редакторский календарь</h3><p class="v5hint">Идея → подготовка → готово → опубликовано. Дата публикации показывает работу в недельном плане, а ссылка ведёт к готовому материалу.</p></div>';
+ nets.forEach(net=>{const items=S.social.filter(x=>x.net===net);out+='<div class="card"><h3>'+safe(net)+' · '+items.filter(x=>!x.done).length+' в работе</h3>';items.forEach(x=>{const status=x.status||(x.done?'Опубликовано':'Идея');out+='<div class="v5cardline"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" '+(x.done?'checked':'')+' onchange="v5setSocial(\''+x.id+'\',\'done\',this.checked?1:0)"><b>'+safe(x.t)+'</b></label><div class="v5field"><select aria-label="Статус" onchange="v5setSocial(\''+x.id+'\',\'status\',this.value)">'+['Идея','В работе','Готово','Опубликовано'].map(t=>'<option '+(status===t?'selected':'')+'>'+t+'</option>').join('')+'</select><input aria-label="Дата публикации" type="date" value="'+safe(x.publishDate||'')+'" onchange="v5setSocial(\''+x.id+'\',\'publishDate\',this.value)"><button class="mini" onclick="v5setSocial(\''+x.id+'\',\'status\',\'Опубликовано\');v5setSocial(\''+x.id+'\',\'done\',1)">✓ Опубликовано</button></div><div class="v5field"><input aria-label="Ссылка на материал" placeholder="https:// ссылка на материал" value="'+safe(x.url||'')+'" onchange="v5setSocial(\''+x.id+'\',\'url\',this.value)">'+(normalizeLink(x.url||'')?'<a target="_blank" rel="noopener noreferrer" class="btn" href="'+safe(normalizeLink(x.url))+'">↗ Открыть</a>':'')+'</div></div>'});out+='<div class="v5field"><input id="v5new_'+nets.indexOf(net)+'" placeholder="Новая публикация"><button class="btn" onclick="v5addSocial('+nets.indexOf(net)+')">＋</button></div></div>'});return out;
+}
+function v5addSocial(idx){const nets=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'],el=document.getElementById('v5new_'+idx);if(!el||!el.value.trim())return;S.social.push({id:uid(),net:nets[idx],t:el.value.trim(),done:0,status:'Идея',publishDate:'',url:''});save();render()}
+function v5setOrder(id,field,value){const x=S.orders.find(x=>String(x.id)===String(id));if(!x)return;if(field==='url'&&value.trim()&&normalizeLink(value)===null){toast('Нужна ссылка с https://');return}x[field]=value;save();render()}
+function v5orders(){let out='<div class="card"><h3>🧴 Бытовые покупки</h3><div class="frm"><input id="by_t" placeholder="Что купить"><button class="add" onclick="addSimple(\'buys\',[\'by_t\'])">＋</button></div>';S.buys.forEach((x,i)=>out+=rowHtml('buys',i,x,''));out+='</div><div class="card"><h3>📦 Ozon / WB · от идеи до получения</h3><div class="v5field"><input id="or_t" placeholder="Что заказать"><select id="or_st"><option>В избранном</option><option>Заказано</option><option>Едет</option><option>Получено</option></select><button class="btn g" onclick="addOrder()">＋</button></div>';
+ S.orders.forEach(x=>{out+='<div class="v5cardline"><label><input type="checkbox" '+(x.done?'checked':'')+' onchange="v5setOrder(\''+x.id+'\',\'done\',this.checked?1:0)"> <b>'+safe(x.t)+'</b></label><div class="v5field"><select onchange="v5setOrder(\''+x.id+'\',\'st\',this.value)">'+['В избранном','Заказано','Едет','Получено'].map(v=>'<option '+(x.st===v?'selected':'')+'>'+v+'</option>').join('')+'</select><select aria-label="Магазин" onchange="v5setOrder(\''+x.id+'\',\'market\',this.value)">'+['Не указан','Ozon','Wildberries','Другой'].map(v=>'<option '+((x.market||'Не указан')===v?'selected':'')+'>'+v+'</option>').join('')+'</select><input type="date" aria-label="Дата получения" value="'+safe(x.delivery||'')+'" onchange="v5setOrder(\''+x.id+'\',\'delivery\',this.value)"></div><div class="v5field"><input placeholder="Ссылка на товар https://" value="'+safe(x.url||'')+'" onchange="v5setOrder(\''+x.id+'\',\'url\',this.value)">'+(normalizeLink(x.url||'')?'<a class="btn" href="'+safe(normalizeLink(x.url))+'" target="_blank" rel="noopener noreferrer">↗ Товар</a>':'')+'</div><div class="v5field"><input aria-label="Артикул или примечание" placeholder="Артикул, размер, комментарий" value="'+safe(x.sub||'')+'" onchange="v5setOrder(\''+x.id+'\',\'sub\',this.value)"></div></div>'});return out+'</div>';
+}
+function v5home(){let out=vHomePlus(),today=iso(new Date()),routines=v5routinesFor(today),planned=S.mealPlan[today],posts=S.social.filter(x=>!x.done&&x.publishDate===today),deliveries=S.orders.filter(x=>!x.done&&x.delivery===today);let extra='<div class="card"><h3>🌿 Дом и работа сегодня</h3>';
+ if(planned)extra+='<div class="v5cardline">🍽️ Меню: '+safe(planned)+'</div>';
+ routines.forEach(x=>extra+='<div class="v5cardline">🔁 '+safe(x.t)+' <button class="mini" onclick="v5completeRoutine(\''+x.id+'\',\''+today+'\')">✓ Сделано</button></div>');posts.forEach(x=>extra+='<div class="v5cardline">📣 '+safe(x.t)+' · '+safe(x.net)+'</div>');deliveries.forEach(x=>extra+='<div class="v5cardline">📦 Ожидается: '+safe(x.t)+'</div>');if(!planned&&!routines.length&&!posts.length&&!deliveries.length)extra+='<p class="mut">Дополнительных дел на сегодня не назначено.</p>';extra+='<div class="v5field"><button class="mini" onclick="go(\'week\')">План на неделю</button><button class="mini" onclick="go(\'routines\')">Рутины</button><button class="mini" onclick="go(\'food\')">Продукты</button></div></div>';
+ return out.replace('<details class="card"><summary><b>📂 Полный дайджест',extra+'<details class="card"><summary><b>📂 Полный дайджест');
+}
+function v5food(){let out=vFoodPlus();return '<div class="card"><h3>🍽️ Меню недели</h3><p class="mut">Собери меню и одним действием добавь недостающие продукты.</p><button class="btn g" onclick="go(\'week\')">Открыть меню на 7 дней</button></div>'+out}
+
+
+/* ===== v6: голосовой захват, подготовка праздников и свободное время ===== */
+S.v6=S.v6&&typeof S.v6==='object'&&!Array.isArray(S.v6)?S.v6:{};
+S.v6.holidays=Array.isArray(S.v6.holidays)?S.v6.holidays:[];
+S.v6.captureDraft=Array.isArray(S.v6.captureDraft)?S.v6.captureDraft:[];
+S.v6.voiceEnabled=false;
+const V6_STYLE=document.createElement('style');
+V6_STYLE.textContent=`.v6pane{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px #0001}.v6pane h3{margin:0 0 9px}.v6field{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:9px 0}.v6field>*{min-width:0}.v6field input,.v6field select,.v6field textarea{font:inherit;padding:9px;border:1px solid #ddd3c2;border-radius:9px;background:#fff}.v6field input[type=text],.v6field textarea{flex:1}.v6field textarea{width:100%;min-height:80px}.v6line{border-bottom:1px solid #eee8e0;padding:9px 0}.v6line:last-child{border:0}.v6mut{font-size:12px;color:#7e756c}.v6big{font-size:15px;font-weight:600}.v6flex{display:flex;align-items:flex-start;justify-content:space-between;gap:7px}.v6btn{border:1px solid #e4d8c8;border-radius:9px;padding:8px 11px;background:#fff;color:#4d453d;cursor:pointer}.v6btn.primary{background:#7fb069;color:#fff;border-color:#7fb069}.v6btn.warn{background:#fff1ee;border-color:#f4c6b9}.v6wide{width:100%}.v6draft{border-radius:11px;background:#faf5eb;padding:10px;margin:8px 0}.v6chips{display:flex;gap:6px;flex-wrap:wrap}.v6chip{border:1px solid #dfd5c4;border-radius:20px;padding:6px 10px;background:white;cursor:pointer}.v6chip.on{background:#f8d9be;border-color:#e8794a}`;
+document.head.appendChild(V6_STYLE);
+function v6todayPlus(days){const d=new Date();d.setDate(d.getDate()+days);return iso(d)}
+function v6datePhrase(t){const a=t.toLowerCase(),now=new Date();if(/послезавтра/.test(a))return v6todayPlus(2);if(/завтра/.test(a))return v6todayPlus(1);if(/сегодня/.test(a))return v6todayPlus(0);
+ const dm=a.match(/\b(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{4}))?\b/);if(dm){const d=new Date(Number(dm[3]||now.getFullYear()),Number(dm[2])-1,Number(dm[1]));if(!dm[3]&&d<today0())d.setFullYear(d.getFullYear()+1);if(d.getDate()===Number(dm[1])&&d.getMonth()===Number(dm[2])-1)return iso(d)}
+ const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];const mn=a.match(/(\d{1,2})\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/);if(mn){const month=months.indexOf(mn[2]);const d=new Date(now.getFullYear(),month,Number(mn[1]));if(d<today0())d.setFullYear(d.getFullYear()+1);if(d.getDate()===Number(mn[1]))return iso(d)}
+ const days=a.match(/через\s+(\d{1,2})\s+дн/);if(days)return v6todayPlus(Number(days[1]));
+ const words=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];const variants=['воскресенье','понедельник','вторник','среду','четверг','пятницу','субботу'];let idx=variants.findIndex(w=>a.includes(w));if(idx<0)idx=words.findIndex(w=>a.includes(w));if(idx>=0){const d=new Date();let shift=(idx-d.getDay()+7)%7;if(shift===0||a.includes('следующ'))shift+=7;d.setDate(d.getDate()+shift);return iso(d)}return ''}
+function v6guessCategory(t){const a=t.toLowerCase();if(/пост|афиш|публикац|сообществ/.test(a))return /академи/.test(a)?'Академия семьи':/юрист/.test(a)?'Мама-юрист':'Детская афиша';if(/врач|педиатр|запис|стоматолог|анализ|маникюр|волос/.test(a))return 'Здоровье';if(/садик|воспитател/.test(a))return 'Садик';if(/продукт|купить|заказ|озон|ozon|wildberries|вб\b/.test(a))return 'Покупки';if(/подар|праздник|день рождения/.test(a))return 'Подарки';if(/курс|урок|вебинар|обучен/.test(a))return 'Учёба';return 'Личное'}
+// === Умное распределение продиктованных поручений по РЕАЛЬНЫМ разделам ===
+const VOICE_DEST=[['inbox','📋 Задачи'],['custom','📅 Календарь'],['docs','🩺 Врачи и записи'],['groceries','🥦 Продукты'],['buys','🧴 Бытовые покупки'],['orders','📦 Ozon / WB'],['social','📣 Соцсети'],['kind','👧 Садик'],['calls','📞 Звонки'],['gifts','🎁 Подарки'],['estate','🏡 Недвижимость'],['notes','📝 Заметки']];
+const VOICE_NETS=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'];
+function voiceTime(t){let m=t.match(/(?:^|\s)(?:в|к|на)\s*(\d{1,2})\s*[:.]\s*(\d{2})(?=\s|$|[,.])/i);if(!m)m=t.match(/(?:^|\s)(?:в|к|на)\s*(\d{1,2})\s*(?:час(?:а|ов)?)(?:\s*(\d{1,2})\s*(?:минут)?)?/i);if(!m)return'';const h=+m[1],mi=+(m[2]||0);return h<24&&mi<60?String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0'):''}
+function voiceDestination(t){const a=t.toLowerCase();
+ if(/(?:озон|ozon|wildberries|вайлдберриз|вб\b|маркетплейс)/.test(a))return'orders';
+ if(/(?:академи[яи]\s+семьи|детск(?:ая|ой)\s+афиш|мама.?юрист|сообществ|опубликов|публикац|пост\b|клип\b|контент)/.test(a))return'social';
+ if(/(?:позвонить|созвониться|набрать|перезвонить|позвони)/.test(a))return'calls';
+ if(/(?:врач|педиатр|стоматолог|поликлиник|маникюр|окрашиван|покраск|парикмахер|анализы|узи\b|приём\b|прием\b)/.test(a))return'docs';
+ if(/(?:садик|детск(?:ий|ого)\s+сад|воспитател|утренник)/.test(a))return'kind';
+ if(/(?:подарок|подарки|поздравить|сюрприз)/.test(a))return'gifts';
+ if(/(?:квартир|недвижимост|ипотек|жк\b|просмотр жилья)/.test(a))return'estate';
+ if(/(?:купить|докупить|закончились|нужны)\s+.*(?:молок|хлеб|яйц|кефир|куриц|сыр|творог|картошк|огурц|помидор|рыб|рис|гречк|банан|яблок|макарон|морков|сметан|овощ|фрукт|продукт)/.test(a)||/(?:продукты|продуктов|в магазин за едой)/.test(a))return'groceries';
+ if(/(?:купить|докупить|заказать|закончились)\b/.test(a))return'buys';
+ if(/(?:встреча|совещани|мероприяти|вебинар|занятие|лекция|эфир|форум|конференци|выступлени|пойти|сходить|прийти)/.test(a)&&v6datePhrase(t))return'custom';
+ if(/(?:записать мысль|заметка|идея для себя)/.test(a))return'notes';
+ return'inbox';
+}
+function voiceNet(t){let a=t.toLowerCase();if(/академи/.test(a))return VOICE_NETS[0];if(/юрист|праве/.test(a))return VOICE_NETS[2];return VOICE_NETS[1]}
+function voiceCategory(dest,t){return dest==='social'?(/академи/.test(t.toLowerCase())?'Академия семьи':/юрист/.test(t.toLowerCase())?'Мама-юрист':'Детская афиша'):{docs:'Здоровье',groceries:'Покупки',buys:'Покупки',orders:'Покупки',kind:'Садик',calls:'Личное',gifts:'Подарки',estate:'Недвижимость',custom:'Личное',notes:'Личное'}[dest]||v6guessCategory(t)}
+function voiceSplit(raw){return raw.replace(/\s+(?:точка с запятой|новое дело|следующее дело)\s+/gi,';').replace(/,\s*(?=(?:завтра|сегодня|послезавтра|в\s+(?:понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)|купить|заказать|записаться|позвонить|подготовить|опубликовать))/gi,'; ').replace(/\s+и\s+(?=(?:купить|заказать|позвонить|записаться|подготовить|опубликовать)\b)/gi,'; ').split(/\s*(?:[;\n]+|\s+а ещё\s+|\s+а еще\s+|\s+и ещё\s+|\s+и еще\s+|\s+также\s+|\s+потом\s+)\s*/i).map(s=>s.trim().replace(/[.!]+$/,'')).filter(Boolean)}
+function v6captureDraft(){const el=document.getElementById('v6speech');if(!el)return;const raw=el.value.trim();if(!raw){toast('Сначала введи или продиктуй текст');return}const items=voiceSplit(raw);S.v6.captureDraft=items.map(t=>{const dest=voiceDestination(t);return{id:uid(),t,due:v6datePhrase(t),time:voiceTime(t),dest,net:voiceNet(t),category:voiceCategory(dest,t),minutes:15,priority:/срочно|обязательно|важно/i.test(t)?'важно':'обычно',selected:true}});save();render();toast('Распределено: '+items.length+'. Проверь разделы и даты')}
+function v6draftUpdate(id,field,val){const x=S.v6.captureDraft.find(x=>x.id===id);if(!x)return;x[field]=val;if(field==='dest')x.category=voiceCategory(val,x.t);save()}
+function voiceCommitOne(x){const id=uid(),t=x.t.trim(),date=x.due||'',time=x.time||'';if(!t)return false;switch(x.dest){
+ case 'custom':if(!date){S.inbox.unshift({id,t,done:0,due:'',category:'Личное',priority:x.priority,minutes:x.minutes,added:iso(new Date())});break}S.custom.push({id,title:t,date,time});break;
+ case 'docs':S.docs.push({id,t,done:0,type:/дочк|ребен|ребён|малыш|педиатр/.test(t.toLowerCase())?'Малышка':/маникюр|волос|покраск|окрашиван/.test(t.toLowerCase())?'Красота':'Себе',date,time,sub:''});break;
+ case 'groceries':S.groceries.push({id,t,done:0});break;
+ case 'buys':S.buys.push({id,t,done:0});break;
+ case 'orders':S.orders.push({id,t,done:0,market:/ozon|озон/i.test(t)?'Ozon':/wildberries|вайлдберриз|\bвб\b/i.test(t)?'Wildberries':'Не указан',st:'В избранном',sub:''});break;
+ case 'social':S.social.push({id,t,net:x.net||VOICE_NETS[1],done:0,status:'Идея',publishDate:date,url:''});break;
+ case 'kind':S.kind.push({id,t,done:0,date});break;
+ case 'calls':S.calls.push({id,t,done:0,date});break;
+ case 'gifts':S.gifts.push({id,t,done:0,sub:date?'Дата: '+date:''});break;
+ case 'estate':S.estate.push({id,t,done:0,sub:''});break;
+ case 'notes':S.notes.push({id,t,body:''});break;
+ default:S.inbox.unshift({id,t,done:0,due:date,category:x.category||'Личное',priority:x.priority||'обычно',minutes:x.minutes||15,added:iso(new Date())});}
+ return true}
+function v6commitDraft(){const selected=S.v6.captureDraft.filter(x=>x.selected);if(!selected.length){toast('Ничего не выбрано');return}let count=0;selected.forEach(x=>{if(voiceCommitOne(x))count++});S.v6.captureDraft=[];save();render();toast('Разложено по разделам: '+count)}
+// One-tap entry: switch view synchronously inside user's click, then request microphone.
+// The speech API still needs browser permission and may be unavailable for file:// pages.
+function startVoiceFromHome(){
+  go('assistant');
+  const field=document.getElementById('v6speech');
+  if(field)field.focus();
+  const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Speech){toast('Микрофон недоступен. Введи текст и нажми «Распределить»');return;}
+  v6voiceStart();
+}
+let v6recognizer=null;
+function v6voiceStart(){const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Speech){toast('Браузер не поддерживает распознавание речи — используй текст');return}try{if(v6recognizer){v6recognizer.stop();v6recognizer=null;return}const r=new Speech();v6recognizer=r;r.lang='ru-RU';r.interimResults=false;r.continuous=false;r.onresult=e=>{r._gotResult=true;const el=document.getElementById('v6speech');if(el)el.value=(el.value?el.value.trim()+'; ':'')+e.results[0][0].transcript};r.onerror=e=>{v6recognizer=null;toast(e.error==='not-allowed'?'Разреши доступ к микрофону в настройках Chrome или введи текст':'Микрофон: '+(e.error||'ошибка')+'; можно ввести текст')};r.onend=()=>{v6recognizer=null;const b=document.getElementById('v6voicebtn');if(b)b.textContent='🎤 Продиктовать';if(r._gotResult&&cur==='assistant')v6captureDraft()};r.start();const b=document.getElementById('v6voicebtn');if(b)b.textContent='■ Остановить';}catch(e){v6recognizer=null;toast('Распознавание недоступно: '+e.message)}}
+const V6_HOLIDAY_TYPES={birthday:{title:'День рождения',tasks:[[-30,'Определить формат праздника и бюджет'],[-21,'Продумать подарок и проверить сроки доставки'],[-14,'Заказать подарок и необходимые товары'],[-10,'Подготовить поздравление от ребёнка'],[-7,'Проверить готовность подарка и место праздника'],[-3,'Подготовить меню и список продуктов'],[-1,'Проверить оформление, торт и последние детали'],[0,'Поздравить и насладиться праздником']]},newyear:{title:'Новый год',tasks:[[-35,'Определить планы на новогодние дни'],[-30,'Составить список подарков'],[-24,'Подготовить адвент-календарь'],[-21,'Заказать подарки с запасом доставки'],[-14,'Продумать праздничное меню'],[-7,'Проверить украшения и докупить недостающее'],[-3,'Купить продукты к празднику'],[-1,'Подготовить праздничную одежду и подарки'],[0,'Отметить праздник']]},kindergarten:{title:'Праздник в садике',tasks:[[-21,'Уточнить требования к костюму и время праздника'],[-14,'Подобрать костюм или заказать недостающее'],[-7,'Подготовить необходимые вещи'],[-1,'Собрать одежду и всё необходимое'],[0,'Взять вещи и прийти вовремя']]},custom:{title:'Свой праздник',tasks:[[-21,'Определить план и бюджет'],[-14,'Подготовить покупки и подарки'],[-7,'Проверить готовность'],[-1,'Собрать необходимое'],[0,'Провести праздник']]}};
+function v6addHoliday(){const type=document.getElementById('v6holidaytype').value,name=document.getElementById('v6holidayname').value.trim(),date=document.getElementById('v6holidaydate').value;if(!date||!name){toast('Укажи название и дату');return}const h={id:uid(),type,name,date,created:iso(new Date()),tasks:V6_HOLIDAY_TYPES[type].tasks.map(([offset,t])=>({id:uid(),offset,t,done:0,include:true}))};S.v6.holidays.push(h);save();render();toast('План праздника сформирован — проверь этапы')}
+function v6holidayDue(date,days){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+days);return iso(d)}
+function v6holidayEdit(hid,tid,field,val){const h=S.v6.holidays.find(h=>h.id===hid),t=h?.tasks.find(t=>t.id===tid);if(t){t[field]=val;save();render()}}
+function v6holidayPublish(id){const h=S.v6.holidays.find(x=>x.id===id);if(!h)return;let added=0;for(const t of h.tasks){if(!t.include)continue;if(v6holidayDue(h.date,Number(t.offset))<iso(new Date()))continue;const key='holiday:'+h.id+':'+t.id;if(S.inbox.some(x=>x.sourceKey===key))continue;S.inbox.unshift({id:uid(),t:h.name+': '+t.t,due:v6holidayDue(h.date,Number(t.offset)),category:'Подарки',priority:Number(t.offset)>=-3?'важно':'обычно',minutes:25,added:iso(new Date()),done:t.done?1:0,sourceKey:key});added++}save();render();toast('Добавлено '+added+' задач. Прошедшие сроки пропущены, дубликатов нет')}
+function v6holidayRemove(id){if(!confirm('Удалить план праздника? Уже добавленные задачи сохранятся.'))return;S.v6.holidays=S.v6.holidays.filter(x=>x.id!==id);save();render()}
+function v6filterTasks(){const m=Number(document.getElementById('v6available')?.value||25),cat=document.getElementById('v6focus')?.value||'Все',includeFuture=!!document.getElementById('v6future')?.checked;S.v6.available=m;S.v6.focus=cat;S.v6.includeFuture=includeFuture;save();v6showSuggestions()}
+function v6suggestedTasks(){const cap=Number(S.v6.available)||25,cat=S.v6.focus||'Все',future=!!S.v6.includeFuture;const candidates=S.inbox.filter(x=>!x.done&&(Number(x.minutes)||15)<=cap&&(cat==='Все'||x.category===cat)&&(future||!x.due||x.due<=iso(new Date())));const rank=x=>{let p=x.priority==='срочно'?100:x.priority==='важно'?45:0;if(x.due){const d=dLeft(x.due);p+=d<0?75:d===0?55:d===1?10:0}return p};return candidates.sort((a,b)=>rank(b)-rank(a)||(Number(a.minutes)||15)-(Number(b.minutes)||15)).slice(0,8)}
+function v6showSuggestions(){const el=document.getElementById('v6suggestions');if(!el)return;const items=v6suggestedTasks();el.innerHTML=items.length?items.map(x=>'<div class="v6line"><div class="v6flex"><div><b>'+safe(x.t)+'</b><div class="v6mut">'+safe(x.category||'Личное')+' · '+(Number(x.minutes)||15)+' мин · '+safe(dueLabel(x))+'</div></div><button class="v6btn" onclick="updInbox(\''+x.id+'\',\'done\',1)">✓</button></div></div>').join(''):'<p class="v6mut">Подходящих дел пока нет. Укажи длительность и сроки задач во вкладке «Быстро записать».</p>'}
+function v6assistant(){const draft=S.v6.captureDraft,cat=['Все','Личное','Малышка','Здоровье','Садик','Дом','Покупки','Подарки','Учёба','Академия семьи','Детская афиша','Мама-юрист','Недвижимость'];let out='<section class="v6pane"><h3>🎤 Скажи — я распределю</h3><p class="v6mut">Скажи несколько дел подряд: «завтра купить молоко; в пятницу в 14:00 к педиатру; подготовить пост Академии семьи». Я предложу разделы, даты и время — проверь перед сохранением.</p><div class="v6field"><textarea id="v6speech" placeholder="Например: в пятницу опубликовать афишу; завтра купить молоко; 25.11 записаться к врачу"></textarea></div><div class="v6field"><button id="v6voicebtn" class="v6btn" onclick="v6voiceStart()">🎤 Продиктовать</button><button class="v6btn primary" onclick="v6captureDraft()">Распределить по разделам</button></div><p class="v6mut">Распознавание зависит от браузера и разрешения микрофона; некоторые браузеры отправляют аудио своему сервису. Для конфиденциальных записей используй текст.</p></section>';
+ if(draft.length){out+='<section class="v6pane"><h3>🧾 Проверь, куда всё попадёт</h3><p class="v6mut">Разделы определены автоматически по словам. Если дата или место не распознаны — исправь прямо здесь.</p>';draft.forEach(x=>out+='<div class="v6draft"><label><input type="checkbox" '+(x.selected?'checked':'')+' onchange="v6draftUpdate(\''+x.id+'\',\'selected\',this.checked)"> Сохранить</label><div class="v6field"><input type="text" value="'+safe(x.t)+'" aria-label="Дело" onchange="v6draftUpdate(\''+x.id+'\',\'t\',this.value)"></div><div class="v6field"><select aria-label="Куда сохранить" onchange="v6draftUpdate(\''+x.id+'\',\'dest\',this.value)">'+VOICE_DEST.map(([id,label])=>'<option value="'+id+'" '+(x.dest===id?'selected':'')+'>'+label+'</option>').join('')+'</select><input type="date" aria-label="Дата" value="'+safe(x.due)+'" onchange="v6draftUpdate(\''+x.id+'\',\'due\',this.value)"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="v6draftUpdate(\''+x.id+'\',\'time\',this.value)"></div><div class="v6field"><label class="v6mut">Сообщество: <select onchange="v6draftUpdate(\''+x.id+'\',\'net\',this.value)">'+VOICE_NETS.map(n=>'<option '+(x.net===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label></div></div>');out+='<button class="v6btn primary" onclick="v6commitDraft()">✓ Разложить выбранное по разделам</button></section>'}
+ out+='<section class="v6pane"><h3>⏱ У меня появилось свободное время</h3><div class="v6field"><label>Сколько минут? <select id="v6available" onchange="v6filterTasks()">'+[5,10,15,25,40,60,90].map(m=>'<option value="'+m+'" '+((Number(S.v6.available)||25)===m?'selected':'')+'>'+m+'</option>').join('')+'</select></label><label>Направление <select id="v6focus" onchange="v6filterTasks()">'+cat.map(c=>'<option '+((S.v6.focus||'Все')===c?'selected':'')+'>'+c+'</option>').join('')+'</select></label><label><input id="v6future" type="checkbox" '+(S.v6.includeFuture?'checked':'')+' onchange="v6filterTasks()"> Включать будущие дела</label></div><div class="v6mut">Подбор из твоих невыполненных задач по сроку, приоритету и примерной длительности. Он не рассчитывает занятость календаря автоматически.</div><div id="v6suggestions"></div></section>';
+ out+='<section class="v6pane"><h3>🎁 Автоматическая подготовка праздника</h3><p class="v6mut">Создай план по шаблону, проверь даты этапов, затем перенеси выбранные задачи в ежедневник. Ничего не добавляется без подтверждения.</p><div class="v6field"><select id="v6holidaytype"><option value="birthday">День рождения</option><option value="newyear">Новый год</option><option value="kindergarten">Праздник в садике</option><option value="custom">Другой праздник</option></select><input id="v6holidayname" type="text" placeholder="Кого или что празднуем?"><input id="v6holidaydate" type="date"><button class="v6btn primary" onclick="v6addHoliday()">Составить план</button></div>';
+ S.v6.holidays.forEach(h=>{out+='<div class="v6draft"><div class="v6flex"><div><b>'+safe(h.name)+'</b><div class="v6mut">'+safe(nice(h.date))+' · '+safe(V6_HOLIDAY_TYPES[h.type]?.title||'Праздник')+'</div></div><button class="v6btn warn" onclick="v6holidayRemove(\''+h.id+'\')">Удалить</button></div>';h.tasks.forEach(t=>out+='<div class="v6line"><label><input type="checkbox" '+(t.include?'checked':'')+' onchange="v6holidayEdit(\''+h.id+'\',\''+t.id+'\',\'include\',this.checked)"> '+safe(t.t)+'</label><div class="v6mut">'+safe(nice(v6holidayDue(h.date,Number(t.offset))))+' ('+(Number(t.offset)<=0?Math.abs(Number(t.offset))+' дн. до праздника':'после')+')</div></div>');out+='<div class="v6field"><button class="v6btn primary" onclick="v6holidayPublish(\''+h.id+'\')">＋ Добавить выбранные этапы в задачи</button></div></div>'});return out+'</section>'}
+function v6home(){const initial=v5home();const suggestions=v6suggestedTasks().slice(0,3);const part='<div class="card"><h3>✨ Помощник дня</h3><p class="mut">Свободные 25 минут? Помощник подберёт дела из твоего списка. Здесь отображаются несколько текущих вариантов.</p>'+suggestions.map(x=>'<div class="v6line">'+safe(x.t)+' <span class="v6mut">· '+(Number(x.minutes)||15)+' мин</span></div>').join('')+'<button class="v6btn" onclick="go(\'assistant\')">🎤 Голос, время и праздники</button></div>';return part+initial}
+
+const VIEWS={home:v6home,assistant:v6assistant,week:v5week,routines:v5routines,inbox:vInbox,settings:vSettings,cal:vCalPlus,courses:vCourses,social:v5social,dr:vDr,doc:vDoc,kind:vKind,buy:v5orders,food:v5food,gift:vGift,fest:vFest,estate:vEstate,call:vCall,notes:vNotes};
+function bellToggle(){S.bell=S.bell?0:1;save();const el=document.getElementById('bell');if(el){el.textContent=S.bell?'🔔':'🔕';el.setAttribute('aria-label',S.bell?'Выключить уведомления':'Включить уведомления')}if(!S.bell)document.getElementById('reminderPanel')?.remove();else remind()}
+const n0=new Date();document.getElementById('hdrdate').textContent=nice(iso(n0));
+renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':'🔕';remind();
+
+// Android home-screen voice shortcut. Launches the same app and local data store.
+(function setupHomeScreenVoiceShortcut(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('voice')!=='1')return;
+  // Open the voice assistant directly. Automatic speech start can be blocked by
+  // Android/browser user-activation policy, so always leave manual start visible.
+  const run=()=>{
+    try {
+      go('assistant');
+      const input=document.getElementById('v6speech');
+      if(input){ input.setAttribute('aria-label','Продиктуй дела или введи текст'); }
+      const speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!speech){toast('Распознавание не поддерживается: можно записать текст');return;}
+      v6voiceStart();
+    } catch(e){
+      console.warn('Voice deep link could not auto-start', e);
+      try{go('assistant');toast('Нажми «🎤 Продиктовать», чтобы начать');}catch(_){}
+    }
+  };
+  // This runs after the original bootstrap, without changing the saved data schema.
+  if(document.readyState==='complete')run();else window.addEventListener('load',run,{once:true});
+})();
+// Offline app shell cache, only available when served from HTTPS/localhost.
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script></body></html>
