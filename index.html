@@ -114,7 +114,7 @@ input,textarea,select,button{font-family:inherit}input[type=checkbox]{accent-col
 <div id="toast" role="status" aria-live="polite"></div>
 <script>
 const K='olgaPlannerV4';
-function def(){return{dr:[],docs:[],buys:[],orders:[],gifts:[],groceries:[],kind:[],notes:[],calls:[],estate:[],advent:[],adventDone:[],steps:{},social:[],custom:[],fam:{spouse:''},inbox:[],routines:[],mealPlan:{},recipeCustom:[],seeded:0,confetti:'',bell:1}}
+function def(){return{courtCases:[],heritageTasks:[],dr:[],docs:[],buys:[],orders:[],gifts:[],groceries:[],kind:[],notes:[],calls:[],estate:[],advent:[],adventDone:[],steps:{},social:[],custom:[],fam:{spouse:''},inbox:[],routines:[],mealPlan:{},recipeCustom:[],seeded:0,confetti:'',bell:1}}
 function load(){try{const s=JSON.parse(localStorage.getItem(K));return s?Object.assign(def(),s):def()}catch(e){return def()}}
 let S=load();
 function save(){localStorage.setItem(K,JSON.stringify(S))}
@@ -244,6 +244,8 @@ function agendaItemsFor(ds){
  (S.social||[]).filter(x=>!x.done&&x.publishDate===ds).forEach(x=>add('📣',x.t,'social',x.net||''));
  (S.routines||[]).filter(x=>v5dueRoutine(x,ds)&&!(x.completed||[]).includes(ds)).forEach(x=>add('🔁',x.t,'routines','повтор'));
  (S.dr||[]).forEach(x=>{if(String(x.date||'').slice(5)===ds.slice(5))add(x.type==='anniversary'?'💍':'🎂',x.name,'dr','ежегодно')});
+ (S.courtCases||[]).filter(x=>x.hearing&&x.hearing.slice(0,10)===ds).forEach(x=>add('⚖️','Заседание: '+x.name,'court',x.hearing.slice(11,16)));
+ (S.heritageTasks||[]).filter(x=>!x.done&&x.due===ds).forEach(x=>add('📜',x.t,'heritage',''));
  const spouseDate=S.fam&&S.fam.spouse;
  if(spouseDate&&String(spouseDate).slice(5)===ds.slice(5)&&!rows.some(x=>x.section==='dr'&&/максимус|муж/i.test(x.title)))add('🎂','День рождения мужа','fest','ежегодно');
  return rows;
@@ -252,7 +254,7 @@ function agendaItemsHtml(ds){
  return agendaItemsFor(ds).map(x=>'<div class="qitem">'+x.icon+' '+safe(x.title)+(x.detail?' <span class="mut">· '+safe(x.detail)+'</span>':'')+' <button class="mini" onclick="go(\''+x.section+'\')">Раздел →</button></div>').join('');
 }
 /* ===== TABS ===== */
-const TABS=[['home','🏠','Мой день'],['week','🗓️','Неделя'],['routines','🔁','Рутины'],['assistant','✨','Помощник'],['inbox','⚡','Быстро записать'],['cal','📅','Календарь'],['courses','🎓','Курсы'],['social','📣','Соцсети'],['dr','🎂','ДР'],['doc','🩺','Врачи и записи'],['beauty','💅','Красота и уход'],['kind','👧','Садик'],['buy','🛍','Покупки'],['food','🥦','Продукты'],['gift','🎁','Подарки'],['fest','🎄','Праздники'],['estate','🏡','Недвижимость'],['call','📞','Звонки'],['notes','📝','Заметки'],['settings','💾','Мои данные']];
+const TABS=[['home','🏠','Мой день'],['week','🗓️','Неделя'],['routines','🔁','Рутины'],['assistant','✨','Помощник'],['inbox','⚡','Быстро записать'],['cal','📅','Календарь'],['courses','🎓','Курсы'],['social','📣','Соцсети'],['dr','🎂','ДР'],['doc','🩺','Врачи и записи'],['beauty','💅','Красота и уход'],['kind','👧','Садик'],['buy','🛍','Покупки'],['food','🥦','Продукты'],['gift','🎁','Подарки'],['fest','🎄','Праздники'],['estate','🏡','Недвижимость'],['court','⚖️','Судебные дела'],['heritage','📜','Наследие'],['call','📞','Звонки'],['notes','📝','Заметки'],['settings','💾','Мои данные']];
 let cur='home';
 const PRIMARY=['home','week','assistant','inbox','cal'];
 function primaryButton(id,bottom=false){const t=TABS.find(x=>x[0]===id);if(!t)return'';return '<button class="'+(cur===id?'on':'')+'" aria-current="'+(cur===id?'page':'false')+'" onclick="go(\''+id+'\')"><span class="nav-icon">'+t[1]+'</span><span>'+({home:'День',inbox:'Записать',cal:'Календарь'}[id]||t[2])+'</span></button>'}
@@ -457,6 +459,36 @@ function vEstate(){let out='<div class="card"><h3>🏡 Поиск недвижи
 function vCall(){let out='<div class="card"><h3>📞 Звонки</h3><div class="frm"><input type="text" id="cl_t" placeholder="Кому и зачем"><button class="add" onclick="addSimple(\'calls\',[\'cl_t\'])">＋</button></div>';
  S.calls.forEach((x,i)=>{out+=rowHtml('calls',i,x,'кому / зачем')});out+='</div>';return out}
 
+
+S.courtCases=Array.isArray(S.courtCases)?S.courtCases:[];
+S.heritageTasks=Array.isArray(S.heritageTasks)?S.heritageTasks:[];
+function addPrivateRecord(kind){
+ const court=kind==='court';
+ const title=document.getElementById(court?'private_case':'private_heritage')?.value.trim()||'';
+ const date=document.getElementById(court?'private_hearing':'private_deadline')?.value||'';
+ const prep=court?(document.getElementById('private_preparation')?.value.trim()||''):'';
+ if(!title){toast(court?'Укажи номер дела':'Укажи задачу');return}
+ const item={id:uid(),name:title,t:title,date,hearing:date,prepare:prep,due:date,done:0};
+ (court?S.courtCases:S.heritageTasks).push(item);save();render();
+}
+function updatePrivateRecord(kind,id,field,value){
+ const record=(kind==='court'?S.courtCases:S.heritageTasks).find(x=>String(x.id)===String(id));
+ if(!record)return;record[field]=value;save();render();
+}
+function removePrivateRecord(kind,id){
+ if(!confirm('Удалить запись?'))return;
+ const key=kind==='court'?'courtCases':'heritageTasks';
+ S[key]=S[key].filter(x=>String(x.id)!==String(id));save();render();
+}
+function vCourt(){
+ let out='<div class="card"><h3>⚖️ Судебные дела</h3><p class="mut">Номер дела, дата заседания и документы к подготовке. Записи хранятся только на этом устройстве.</p><div class="frm"><input id="private_case" placeholder="Номер дела"><input id="private_hearing" type="datetime-local" aria-label="Дата и время заседания"><textarea id="private_preparation" placeholder="Что подготовить к заседанию"></textarea><button class="add" onclick="addPrivateRecord(\'court\')">＋ Добавить</button></div></div>';
+ S.courtCases.forEach(x=>{out+='<div class="card"><h3>Дело '+safe(x.name)+'</h3><label>Дата и время заседания <input type="datetime-local" value="'+safe(x.hearing||'')+'" onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'hearing\',this.value)"></label><p>Что подготовить</p><textarea onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'prepare\',this.value)">'+safe(x.prepare||'')+'</textarea><div class="frm"><label><input type="checkbox" '+(x.done?'checked':'')+' onchange="updatePrivateRecord(\'court\',\''+safe(x.id)+'\',\'done\',this.checked?1:0)"> Подготовлено</label><button class="del" onclick="removePrivateRecord(\'court\',\''+safe(x.id)+'\')">✕</button></div></div>'});return out;
+}
+function vHeritage(){
+ let out='<div class="card"><h3>📜 Наследие Виктории Ельфиной</h3><p class="mut">Личный список задач проекта. Никаких придуманных сроков.</p><div class="frm"><input id="private_heritage" placeholder="Задача проекта"><input id="private_deadline" type="date" aria-label="Срок"><button class="add" onclick="addPrivateRecord(\'heritage\')">＋ Добавить</button></div></div>';
+ S.heritageTasks.forEach(x=>{out+='<div class="row"><input type="checkbox" '+(x.done?'checked':'')+' onchange="updatePrivateRecord(\'heritage\',\''+safe(x.id)+'\',\'done\',this.checked?1:0)"><div class="txt"><input value="'+safe(x.t)+'" onchange="updatePrivateRecord(\'heritage\',\''+safe(x.id)+'\',\'t\',this.value)"><input type="date" value="'+safe(x.due||'')+'" onchange="updatePrivateRecord(\'heritage\',\''+safe(x.id)+'\',\'due\',this.value)"></div><button class="del" onclick="removePrivateRecord(\'heritage\',\''+safe(x.id)+'\')">✕</button></div>'});return out+'</div>';
+}
+
 /* ===== ЗАМЕТКИ ===== */
 function vNotes(){let out='<div class="card"><h3>📝 Заметки</h3><div class="frm"><input type="text" id="nt_t" placeholder="Название заметки"><button class="add" onclick="addNote()">＋</button></div><div class="mut">Для всего, что легко забыть: рецепты, размеры одежды малышки, списки «что взять в садик».</div>';
  S.notes.forEach((x,i)=>{out+='<div class="card" style="background:var(--soft);margin:8px 0"><div class="row" style="border:none"><div class="txt"><input style="font-weight:700" value="'+esc(x.t)+'" onchange="edit(\'notes\','+i+',\'t\',this.value)"></div><button class="del" onclick="del(\'notes\','+i+')">✕</button></div><textarea placeholder="текст заметки..." onchange="edit(\'notes\','+i+',\'body\',this.value)">'+esc(x.body||'')+'</textarea></div>'});
@@ -643,26 +675,14 @@ function ensureMamaLawyerGiveawayReminder(){
 ensureMamaLawyerGiveawayReminder();
 /* Reviewed project follow-ups from past conversations: add once, never reset status
    or re-create a user-deleted item on subsequent page loads. No invented deadlines. */
-const DIALOG_BACKLOG_20261116=[{"id":"dialog-backlog-20261116-afisha-orion-clip","t":"Создать клип с Зайкой про посещение спортивных мероприятий на стадионе «Орион»; проверить бесплатный вход на конкретное мероприятие","category":"Детская афиша","minutes":60,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-afisha-partner-requests","t":"Проверить статус запросов о сотрудничестве с ДК Саввино и ДК «Восход» (Кучино); при необходимости направить или повторить обращение","category":"Детская афиша","minutes":25,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-afisha-first-paid-placement","t":"Подготовить первое платное предложение о размещении для организаторов детских занятий и проверить заинтересованность партнёров","category":"Детская афиша","minutes":40,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-afisha-academy-article","t":"Проверить готовность статьи и рубрики об «Академии семьи» для «Детской афиши»; запросить у организаторов недостающие материалы","category":"Детская афиша","minutes":30,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-academy-speakers-cover","t":"Проверить и адаптировать обложку кнопки «Наши спикеры» под размеры меню сообщества «Академия семьи»","category":"Академия семьи","minutes":25,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-academy-edelweiss-collaboration","t":"Уточнить статус предложения ТЦ «Эдельвейс» о совместном информационном продвижении «Академии семьи» и «Детской афиши»","category":"Академия семьи","minutes":20,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-mama-lawyer-clip","t":"Проверить готовность и подготовить к публикации следующий короткий клип «Мама — юрист. Дети в праве.» с юридической проверкой текста","category":"Мама-юрист","minutes":45,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-digital-cradle-pilot","t":"Сверить готовность пилота «Цифровой колыбели»: 10 мам, 7 дней, анкета, гипотезы H1–H5 и критерии результата","category":"Цифровая колыбель","minutes":45,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-digital-cradle-paid","t":"После проверки пилота определить состав и условия первого платного продукта «Цифровая колыбель»","category":"Цифровая колыбель","minutes":40,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-business-top-three","t":"Сопоставить три перспективные независимые бизнес-ниши: спрос, стартовые затраты, трудозатраты и экономика до первого заказа","category":"Бизнес-лаборатория","minutes":60,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-bankrolot-api-next-step","t":"Проверить практический этап подключения БАНКРОЛОТ к данным ЕФРСБ: доступность API, минимальные расходы и безопасное хранение ключей вне чата","category":"БАНКРОЛОТ","minutes":45,"priority":"обычно","done":0,"due":"","added":"2026-11-16"},{"id":"dialog-backlog-20261116-women-union-followup","t":"Проверить, поступил ли ответ на предложение о сотрудничестве Союзу женщин России; при необходимости подготовить повторное обращение","category":"Мама-юрист","minutes":15,"priority":"обычно","done":0,"due":"","added":"2026-11-16"}];
-function seedDialogBacklog20261116(){
- if(S.dialogBacklogReviewed20261116)return;
+const DIALOG_BACKLOG_20261116=[{"id":"dialog-backlog-20261116-bankrolot-api-next-step","t":"Проверить практический этап подключения БАНКРОЛОТ к данным ЕФРСБ: доступность API, минимальные расходы и безопасное хранение ключей вне чата","category":"БАНКРОЛОТ","minutes":45,"priority":"обычно","done":0,"due":"","added":"2026-11-16"}];
+function reconcileDialogBacklog20261116(){
  if(!Array.isArray(S.inbox))S.inbox=[];
- for(const item of DIALOG_BACKLOG_20261116){
-  // For similar manually entered work, treat it as already recorded.
-  const title=item.t.toLocaleLowerCase('ru-RU');
-  const match=(S.inbox||[]).some(x=>{
-   const text=String(x.t||'').toLocaleLowerCase('ru-RU');
-   if(x.id===item.id)return true;
-   if(item.id.includes('orion'))return /орион/.test(text)&&/клип|видео|ролик/.test(text);
-   if(item.id.includes('pilot'))return /цифровой колыбел/.test(text)&&/пилот|10 мам/.test(text);
-   if(item.id.includes('api-next-step'))return /банкролот/.test(text)&&/api|ефрсб/.test(text);
-   return text===title;
-  });
-  if(!match)S.inbox.push({...item});
- }
- S.dialogBacklogReviewed20261116=true;save();
+ S.inbox=S.inbox.filter(x=>!String(x.id||'').startsWith('dialog-backlog-20261116-')||x.id==='dialog-backlog-20261116-bankrolot-api-next-step');
+ if(!S.inbox.some(x=>x.id==='dialog-backlog-20261116-bankrolot-api-next-step')&&!S.inbox.some(x=>/БАНКРОЛОТ/i.test(x.t||'')&&/ЕФРСБ|API/i.test(x.t||'')))S.inbox.push({...DIALOG_BACKLOG_20261116[0]});
+ S.dialogBacklogReviewed20261116=true;S.projectBacklogTrimmed20261116=true;save();
 }
-seedDialogBacklog20261116();
+if(!S.projectBacklogTrimmed20261116)reconcileDialogBacklog20261116();
 function vCourses(){let out='<div class="card"><h3>🎓 Мои курсы</h3><p class="mut">Каждый курс имеет свою кнопку перехода. Ссылки не дублируются.</p></div>';
  COURSES.forEach((c,ci)=>{if(c.o==='ТГУ'&& !COURSES.slice(0,ci).some(p=>p.o==='ТГУ'))out+='<div class="card"><h3>⚠ ТГУ — требуется исправить документы</h3><p>Ранее загруженные документы не соответствуют требованиям организации. В <a href="https://lk.flow-crm.study/" target="_blank" rel="noopener noreferrer">личном кабинете ТГУ</a> проверь комментарий к каждому отклонённому документу, исправь замечания и загрузи обновлённые версии.</p><p class="mut">Это отдельная незавершённая задача в разделе «Мои задачи». Отправка подписанных оригиналов почтой — другое дело, оно остаётся в списке.</p></div>';if(!S.steps[c.n])S.steps[c.n]=c.s.map(()=>0);const progress=S.steps[c.n],done=progress.filter(Boolean).length;out+='<div class="card"><h3>'+safe(c.n)+'</h3>'+(c.completed?'<div class="tag" style="display:inline-block;margin:3px 0 7px;background:#e3f4e6;color:#265c34;font-weight:700">✅ Курс пройден</div>':'')+'<div class="mut">'+safe(c.o)+'</div>'+(c.n.startsWith('Креативный код:')?'<div class="mut">Занятия уже в календаре: 18.11, 25.11, 02.12, 09.12. Ссылку с персональным кодом сохрани в поле ниже — она будет храниться только в этом браузере.</div>':'')+(c.url&&c.o!=='ТГУ'?'<div style="margin:9px 0"><a class="btn g" href="'+safe(c.url)+'" target="_blank" rel="noopener noreferrer">↗ Открыть курс</a></div>':'')+(c.dl&&!c.completed?'<div class="mut">'+(dLeft(c.dl)<0?'Срок прошёл':'До '+nice(c.dl))+'</div>':'')+(!c.url?linkEditor(linkKeyCourse(ci),'link_course_'+ci):'')+'<div class="prog"><i style="width:'+(100*done/Math.max(1,c.s.length))+'%"></i></div><div class="mut">'+done+' из '+c.s.length+'</div>';
  c.s.forEach((st,si)=>out+='<div class="row"><input type="checkbox" '+(progress[si]?'checked':'')+' onchange="toggleSteps('+ci+','+si+')"><div class="txt"><input value="'+safe(st)+'" onchange="renStep('+ci+','+si+',this.value)"></div><button class="del" onclick="deleteStep('+ci+','+si+')">✕</button></div>');
@@ -913,6 +933,7 @@ function v6FreeTimeCandidates(){
   add('orders',x,'Покупки и заказы','Дом и семья',10,{sampleKey:'orders',includeFuture:true});
  });
  (S.estate||[]).forEach(x=>add('estate',x,'Недвижимость','Мои проекты',25,{sampleKey:'estate',includeFuture:true}));
+ (S.heritageTasks||[]).forEach(x=>add('heritage',x,'Наследие','Мои проекты',25,{includeFuture:true}));
  (S.routines||[]).filter(x=>v5dueRoutine(x,today)&&!(x.completed||[]).includes(today)).forEach(x=>add('routines',x,'Регулярные дела','Дом и семья',15,{includeFuture:true}));
  (S.ny||[]).forEach(x=>add('ny',x,'Подготовка к Новому году','Дом и семья',25,{excluded:!x.userAdded,includeFuture:true}));
  (S.hs||[]).forEach(x=>add('hs',x,'Подготовка ко дню рождения','Дом и семья',25,{excluded:!x.userAdded,includeFuture:true}));
@@ -938,7 +959,7 @@ function v6filterTasks(){
  save();v6showSuggestions();
 }
 function v6completeSuggestion(key,id){
- const collections={inbox:'inbox',calls:'calls',kind:'kind',buys:'buys',groceries:'groceries',gifts:'gifts',docs:'docs',social:'social',orders:'orders',estate:'estate',ny:'ny',hs:'hs'};
+ const collections={heritage:'heritageTasks',inbox:'inbox',calls:'calls',kind:'kind',buys:'buys',groceries:'groceries',gifts:'gifts',docs:'docs',social:'social',orders:'orders',estate:'estate',ny:'ny',hs:'hs'};
  if(key==='routines'){v5completeRoutine(id,iso(new Date()));v6showSuggestions();return}
  const group=collections[key],x=(S[group]||[]).find(v=>String(v.id)===String(id));
  if(!x)return;
@@ -948,7 +969,7 @@ function v6completeSuggestion(key,id){
  save();v6showSuggestions();
 }
 function v6suggestionSection(key){
- return ({inbox:'inbox',calls:'call',kind:'kind',buys:'buy',groceries:'food',gifts:'gift',docs:'doc',social:'social',orders:'buy',estate:'estate',routines:'routines',ny:'fest',hs:'fest'})[key]||'inbox'
+ return ({heritage:'heritage',inbox:'inbox',calls:'call',kind:'kind',buys:'buy',groceries:'food',gifts:'gift',docs:'doc',social:'social',orders:'buy',estate:'estate',routines:'routines',ny:'fest',hs:'fest'})[key]||'inbox'
 }
 function v6showSuggestions(){
  const el=document.getElementById('v6suggestions');if(!el)return;
@@ -971,7 +992,7 @@ function plannerIntegrity(){
  const duplicateIds=[];['dr','docs','buys','orders','gifts','groceries','kind','notes','calls','estate','social','custom','inbox','routines'].forEach(k=>{const ids=new Set();(S[k]||[]).forEach(x=>{if(ids.has(String(x.id)))duplicateIds.push(k);ids.add(String(x.id))})});
  return {dataStructuresOk:missing.length===0,missing,duplicateIdSections:[...new Set(duplicateIds)],scheduledEvents:EVENTS.length,courseCards:COURSES.length};
 }
-const VIEWS={home:v6home,assistant:v6assistant,week:v5week,routines:v5routines,inbox:vInbox,settings:vSettings,cal:vCalPlus,courses:vCourses,social:v5social,dr:vDr,doc:vDoc,beauty:vBeauty,kind:vKind,buy:v5orders,food:v5food,gift:vGift,fest:vFest,estate:vEstate,call:vCall,notes:vNotes};
+const VIEWS={home:v6home,assistant:v6assistant,week:v5week,routines:v5routines,inbox:vInbox,settings:vSettings,cal:vCalPlus,courses:vCourses,social:v5social,dr:vDr,doc:vDoc,beauty:vBeauty,kind:vKind,buy:v5orders,food:v5food,gift:vGift,fest:vFest,estate:vEstate,court:vCourt,heritage:vHeritage,call:vCall,notes:vNotes};
 function bellToggle(){S.bell=S.bell?0:1;save();const el=document.getElementById('bell');if(el){el.textContent=S.bell?'🔔':'🔕';el.setAttribute('aria-label',S.bell?'Выключить уведомления':'Включить уведомления')}if(!S.bell)document.getElementById('reminderPanel')?.remove();else remind()}
 const n0=new Date();document.getElementById('hdrdate').textContent=nice(iso(n0));
 renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':'🔕';remind();
@@ -1000,7 +1021,7 @@ renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':
 })();
 // Offline app shell cache, only available when served from HTTPS/localhost.
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
-  const freshVersion='2026-11-16-dialog-review-v6';
+  const freshVersion='2026-11-16-privacy-sections-v7';
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(sessionStorage.getItem('olga-sw-reloaded')!==freshVersion){
       sessionStorage.setItem('olga-sw-reloaded',freshVersion);
