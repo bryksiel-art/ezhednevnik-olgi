@@ -226,7 +226,7 @@ function showMore(){renderTabs();const o=document.getElementById('moreOverlay');
 function closeMore(){const o=document.getElementById('moreOverlay');o.hidden=true;document.body.classList.remove('sheet-open')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMore()});
 function go(id){if(!VIEWS[id])return;closeMore();cur=id;renderTabs();render()}
-function render(){const el=document.getElementById('view');el.innerHTML=VIEWS[cur]();window.scrollTo({top:0,behavior:'instant'});if(cur==='assistant'){v6updateVoiceControls();v6showSuggestions()}}
+function render(){const el=document.getElementById('view');el.innerHTML=VIEWS[cur]();window.scrollTo({top:0,behavior:'instant'});if(cur==='assistant')v6showSuggestions()}
 
 function tog(key,i){S[key][i].done=S[key][i].done?0:1;save();render()}
 function del(key,i){S[key].splice(i,1);save();render()}
@@ -584,12 +584,27 @@ function v6guessCategory(t){const a=t.toLowerCase();if(/пост|афиш|пуб
 // === Умное распределение продиктованных поручений по РЕАЛЬНЫМ разделам ===
 const VOICE_DEST=[['inbox','📋 Задачи'],['custom','📅 Календарь'],['docs','🩺 Врачи и записи'],['groceries','🥦 Продукты'],['buys','🧴 Бытовые покупки'],['orders','📦 Ozon / WB'],['social','📣 Соцсети'],['kind','👧 Садик'],['calls','📞 Звонки'],['gifts','🎁 Подарки'],['estate','🏡 Недвижимость'],['notes','📝 Заметки']];
 const VOICE_NETS=['Академия семьи','Детская Афиша Железнодорожного','Мама-юрист. Дети в праве'];
-function voiceTime(t){let m=t.match(/(?:^|\s)(?:в|к|на)\s*(\d{1,2})\s*[:.]\s*(\d{2})(?=\s|$|[,.])/i);if(!m)m=t.match(/(?:^|\s)(?:в|к|на)\s*(\d{1,2})\s*(?:час(?:а|ов)?)(?:\s*(\d{1,2})\s*(?:минут)?)?/i);if(!m)return'';const h=+m[1],mi=+(m[2]||0);return h<24&&mi<60?String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0'):''}
+function voiceTimeInfo(t){
+ const a=t.toLowerCase();
+ let m=a.match(/(?:^|\s)(?:в|к|на)\s*(\d{1,2})\s*[:.]\s*(\d{2})(?=\s|$|[,.])/i);
+ if(!m)m=a.match(/(?:^|\s)(?:в|к|на)\s*(\d{1,2})\s*(?:час(?:а|ов)?)(?:\s*(\d{1,2})\s*(?:минут)?)?/i);
+ if(!m)return{time:'',ambiguous:false};
+ let h=+m[1],minutes=+(m[2]||0);
+ if(h>23||minutes>59)return{time:'',ambiguous:false};
+ const after=a.slice((m.index||0)+m[0].length, (m.index||0)+m[0].length+25);
+ const pm=/(?:дня|вечера)(?=\s|$|[.,])/.test(after),am=/(?:утра|ночи)(?=\s|$|[.,])/.test(after);
+ if(pm&&h>=1&&h<=11)h+=12;
+ if(am&&h===12)h=0;
+ const ambiguous=!pm&&!am&&h>=1&&h<=11;
+ return{time:ambiguous?'':String(h).padStart(2,'0')+':'+String(minutes).padStart(2,'0'),ambiguous,
+         options:ambiguous?[String(h).padStart(2,'0')+':'+String(minutes).padStart(2,'0'),String(h+12).padStart(2,'0')+':'+String(minutes).padStart(2,'0')]:[]};
+}
+function voiceTime(t){return voiceTimeInfo(t).time}
 function voiceDestination(t){const a=t.toLowerCase();
  if(/(?:озон|ozon|wildberries|вайлдберриз|вб\b|маркетплейс)/.test(a))return'orders';
  if(/(?:академи[яи]\s+семьи|детск(?:ая|ой)\s+афиш|мама.?юрист|сообществ|опубликов|публикац|пост\b|клип\b|контент)/.test(a))return'social';
  if(/(?:позвонить|созвониться|набрать|перезвонить|позвони)/.test(a))return'calls';
- if(/(?:врач|педиатр|стоматолог|поликлиник|маникюр|окрашиван|покраск|парикмахер|анализы|узи\b|приём\b|прием\b)/.test(a))return'docs';
+ if(/(?:врач|педиатр|стоматолог|поликлиник|маникюр|окрашиван|покраск|парикмахер|анализ|узи|маммограф|мрт|кт|обследован|диспансеризац|флюорограф|рентген|гинеколог|терапевт|кардиолог|эндокринолог|невролог|офтальмолог|окулист|больниц|медосмотр|при[её]м)/.test(a))return'docs';
  if(/(?:садик|детск(?:ий|ого)\s+сад|воспитател|утренник)/.test(a))return'kind';
  if(/(?:подарок|подарки|поздравить|сюрприз)/.test(a))return'gifts';
  if(/(?:квартир|недвижимост|ипотек|жк\b|просмотр жилья)/.test(a))return'estate';
@@ -599,11 +614,32 @@ function voiceDestination(t){const a=t.toLowerCase();
  if(/(?:записать мысль|заметка|идея для себя)/.test(a))return'notes';
  return'inbox';
 }
-function voiceNet(t){let a=t.toLowerCase();if(/академи/.test(a))return VOICE_NETS[0];if(/юрист|праве/.test(a))return VOICE_NETS[2];return VOICE_NETS[1]}
+function voiceNet(t){const a=t.toLowerCase();if(/академи/.test(a))return VOICE_NETS[0];if(/юрист|праве/.test(a))return VOICE_NETS[2];if(/детск.*афиш|железнодорожн/.test(a))return VOICE_NETS[1];return ''}
 function voiceCategory(dest,t){return dest==='social'?(/академи/.test(t.toLowerCase())?'Академия семьи':/юрист/.test(t.toLowerCase())?'Мама-юрист':'Детская афиша'):{docs:'Здоровье',groceries:'Покупки',buys:'Покупки',orders:'Покупки',kind:'Садик',calls:'Личное',gifts:'Подарки',estate:'Недвижимость',custom:'Личное',notes:'Личное'}[dest]||v6guessCategory(t)}
 function voiceSplit(raw){return raw.replace(/\s+(?:точка с запятой|новое дело|следующее дело)\s+/gi,';').replace(/,\s*(?=(?:завтра|сегодня|послезавтра|в\s+(?:понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)|купить|заказать|записаться|позвонить|подготовить|опубликовать))/gi,'; ').replace(/\s+и\s+(?=(?:купить|заказать|позвонить|записаться|подготовить|опубликовать)\b)/gi,'; ').split(/\s*(?:[;\n]+|\s+а ещё\s+|\s+а еще\s+|\s+и ещё\s+|\s+и еще\s+|\s+также\s+|\s+потом\s+)\s*/i).map(s=>s.trim().replace(/[.!]+$/,'')).filter(Boolean)}
-function v6captureDraft(){const el=document.getElementById('v6speech');if(!el)return;const raw=el.value.trim();if(!raw){toast('Сначала введи или продиктуй текст');return}const items=voiceSplit(raw);S.v6.captureDraft=items.map(t=>{const dest=voiceDestination(t);return{id:uid(),t,due:v6datePhrase(t),time:voiceTime(t),dest,net:voiceNet(t),category:voiceCategory(dest,t),minutes:15,priority:/срочно|обязательно|важно/i.test(t)?'важно':'обычно',selected:true}});save();render();toast('Распределено: '+items.length+'. Проверь разделы и даты')}
-function v6draftUpdate(id,field,val){const x=S.v6.captureDraft.find(x=>x.id===id);if(!x)return;x[field]=val;if(field==='dest')x.category=voiceCategory(val,x.t);save()}
+function v6captureDraft(){
+ const el=document.getElementById('v6speech');if(!el)return;
+ const raw=el.value.trim();if(!raw){toast('Сначала введи или продиктуй текст');return}
+ const items=voiceSplit(raw);
+ S.v6.captureDraft=items.map(t=>{const dest=voiceDestination(t),when=voiceTimeInfo(t);
+ return{id:uid(),t,due:v6datePhrase(t),time:when.time,timeAmbiguous:when.ambiguous,timeOptions:when.options||[],dest,
+ net:dest==='social'?voiceNet(t):'',category:voiceCategory(dest,t),minutes:15,
+ priority:/срочно|обязательно|важно/i.test(t)?'важно':'обычно',selected:true};});
+ save();render();toast('Распознано '+items.length+' дел. Проверь даты и разделы перед сохранением');
+}
+function v6draftUpdate(id,field,val){
+ const x=S.v6.captureDraft.find(x=>x.id===id);if(!x)return;
+ x[field]=val;
+ const wasAmbiguous=field==='time'&&x.timeAmbiguous;
+ if(field==='time'&&val)x.timeAmbiguous=false;
+ if(field==='dest'){
+   x.category=voiceCategory(val,x.t);
+   if(val==='social')x.net=voiceNet(x.t);
+   else x.net='';
+ }
+ save();
+ if(field==='dest'||(wasAmbiguous&&val))render();
+}
 function voiceCommitOne(x){const id=uid(),t=x.t.trim(),date=x.due||'',time=x.time||'';if(!t)return false;switch(x.dest){
  case 'custom':if(!date){S.inbox.unshift({id,t,done:0,due:'',category:'Личное',priority:x.priority,minutes:x.minutes,added:iso(new Date())});break}S.custom.push({id,title:t,date,time});break;
  case 'docs':S.docs.push({id,t,done:0,type:/дочк|ребен|ребён|малыш|педиатр/.test(t.toLowerCase())?'Малышка':/маникюр|волос|покраск|окрашиван/.test(t.toLowerCase())?'Красота':'Себе',date,time,sub:''});break;
@@ -618,103 +654,28 @@ function voiceCommitOne(x){const id=uid(),t=x.t.trim(),date=x.due||'',time=x.tim
  case 'notes':S.notes.push({id,t,body:''});break;
  default:S.inbox.unshift({id,t,done:0,due:date,category:x.category||'Личное',priority:x.priority||'обычно',minutes:x.minutes||15,added:iso(new Date())});}
  return true}
-function v6commitDraft(){const selected=S.v6.captureDraft.filter(x=>x.selected);if(!selected.length){toast('Ничего не выбрано');return}let count=0;selected.forEach(x=>{if(voiceCommitOne(x))count++});S.v6.captureDraft=[];save();render();toast('Разложено по разделам: '+count)}
+function v6commitDraft(){
+ const selected=S.v6.captureDraft.filter(x=>x.selected);
+ if(!selected.length){toast('Ничего не выбрано');return}
+ const missingTime=selected.find(x=>x.timeAmbiguous&&!x.time);
+ if(missingTime){toast('Уточни время: утро или день, прежде чем сохранить');return}
+ const missingNet=selected.find(x=>x.dest==='social'&&!x.net);
+ if(missingNet){toast('Укажи сообщество для публикации');return}
+ let count=0;selected.forEach(x=>{if(voiceCommitOne(x))count++});
+ S.v6.captureDraft=[];save();render();toast('Разложено по разделам: '+count);
+}
+// One-tap entry: switch view synchronously inside user's click, then request microphone.
+// The speech API still needs browser permission and may be unavailable for file:// pages.
 function startVoiceFromHome(){
-  if(cur!=='assistant')go('assistant');
-  if(!v6recognizer)v6voiceStart();
-}
-
-let v6recognizer=null;
-let v6voicePhase='idle';
-let v6voiceMessage='';
-
-function v6updateVoiceControls(){
-  const button=document.getElementById('v6voicebtn');
-  if(button){
-    button.textContent={
-      idle:'🎤 Продиктовать',
-      starting:'Подключение микрофона…',
-      listening:'■ Остановить',
-      stopping:'Завершение диктовки…'
-    }[v6voicePhase];
-    button.disabled=v6voicePhase==='starting'||v6voicePhase==='stopping';
-  }
-  const status=document.getElementById('v6voicestatus');
-  if(status)status.textContent=v6voiceMessage;
-}
-
-function v6voiceStart(){
-  if(v6voicePhase==='starting'||v6voicePhase==='stopping')return;
+  go('assistant');
+  const field=document.getElementById('v6speech');
+  if(field)field.focus();
   const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!Speech){
-    v6voiceMessage='В этом браузере диктовка недоступна. Введи дела в поле или воспользуйся микрофоном на клавиатуре.';
-    v6updateVoiceControls();
-    return;
-  }
-
-  function fail(message){
-    v6recognizer=null;
-    v6voicePhase='idle';
-    v6voiceMessage=message;
-    v6updateVoiceControls();
-  }
-
-  try{
-    if(v6recognizer){
-      v6voicePhase='stopping';
-      v6updateVoiceControls();
-      v6recognizer.stop();
-      return;
-    }
-
-    const recognition=new Speech();
-    let gotResult=false;
-    v6recognizer=recognition;
-    v6voicePhase='starting';
-    v6voiceMessage='';
-    v6updateVoiceControls();
-
-    recognition.lang='ru-RU';
-    recognition.interimResults=false;
-    recognition.continuous=false;
-    recognition.onaudiostart=()=>{
-      if(v6recognizer!==recognition||v6voicePhase!=='starting')return;
-      v6voicePhase='listening';
-      v6updateVoiceControls();
-    };
-    recognition.onresult=event=>{
-      if(v6recognizer!==recognition)return;
-      const field=document.getElementById('v6speech');
-      if(!field)return;
-      const transcript=event.results[event.resultIndex][0].transcript.trim();
-      if(!transcript)return;
-      const text=field.value.trim();
-      field.value=text?text+'; '+transcript:transcript;
-      gotResult=true;
-    };
-    recognition.onerror=event=>{
-      if(v6recognizer!==recognition)return;
-      const messages={
-        'not-allowed':'Разреши микрофон для ежедневника в Chrome (Настройки → Настройки сайтов → Микрофон) и попробуй снова.',
-        'service-not-allowed':'Сервис распознавания речи недоступен. Можно продиктовать дела через микрофон на клавиатуре.',
-        'audio-capture':'Микрофон недоступен. Проверь доступ к микрофону для Chrome в настройках телефона.',
-        'no-speech':'Речь не распознана. Нажми «Продиктовать» и скажи свои дела ещё раз.',
-        network:'Сервис распознавания не ответил. Проверь подключение к интернету и попробуй снова.'
-      };
-      fail(messages[event.error]||'Диктовка прервалась. Можно повторить попытку или ввести текст.');
-    };
-    recognition.onend=()=>{
-      if(v6recognizer!==recognition)return;
-      v6recognizer=null;
-      v6voicePhase='idle';
-      v6updateVoiceControls();
-      if(gotResult&&cur==='assistant')v6captureDraft();
-    };
-    recognition.start();
-  }catch{
-    fail('Диктовку не удалось запустить. Можно повторить попытку или ввести текст.');
-  }
+  if(!Speech){toast('Микрофон недоступен. Введи текст и нажми «Распределить»');return;}
+  v6voiceStart();
 }
+let v6recognizer=null;
+function v6voiceStart(){const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Speech){toast('Браузер не поддерживает распознавание речи — используй текст');return}try{if(v6recognizer){v6recognizer.stop();v6recognizer=null;return}const r=new Speech();v6recognizer=r;r.lang='ru-RU';r.interimResults=false;r.continuous=false;r.onresult=e=>{r._gotResult=true;const el=document.getElementById('v6speech');if(el)el.value=(el.value?el.value.trim()+'; ':'')+e.results[0][0].transcript};r.onerror=e=>{v6recognizer=null;toast(e.error==='not-allowed'?'Разреши доступ к микрофону в настройках Chrome или введи текст':'Микрофон: '+(e.error||'ошибка')+'; можно ввести текст')};r.onend=()=>{v6recognizer=null;const b=document.getElementById('v6voicebtn');if(b)b.textContent='🎤 Продиктовать';if(r._gotResult&&cur==='assistant')v6captureDraft()};r.start();const b=document.getElementById('v6voicebtn');if(b)b.textContent='■ Остановить';}catch(e){v6recognizer=null;toast('Распознавание недоступно: '+e.message)}}
 const V6_HOLIDAY_TYPES={birthday:{title:'День рождения',tasks:[[-30,'Определить формат праздника и бюджет'],[-21,'Продумать подарок и проверить сроки доставки'],[-14,'Заказать подарок и необходимые товары'],[-10,'Подготовить поздравление от ребёнка'],[-7,'Проверить готовность подарка и место праздника'],[-3,'Подготовить меню и список продуктов'],[-1,'Проверить оформление, торт и последние детали'],[0,'Поздравить и насладиться праздником']]},newyear:{title:'Новый год',tasks:[[-35,'Определить планы на новогодние дни'],[-30,'Составить список подарков'],[-24,'Подготовить адвент-календарь'],[-21,'Заказать подарки с запасом доставки'],[-14,'Продумать праздничное меню'],[-7,'Проверить украшения и докупить недостающее'],[-3,'Купить продукты к празднику'],[-1,'Подготовить праздничную одежду и подарки'],[0,'Отметить праздник']]},kindergarten:{title:'Праздник в садике',tasks:[[-21,'Уточнить требования к костюму и время праздника'],[-14,'Подобрать костюм или заказать недостающее'],[-7,'Подготовить необходимые вещи'],[-1,'Собрать одежду и всё необходимое'],[0,'Взять вещи и прийти вовремя']]},custom:{title:'Свой праздник',tasks:[[-21,'Определить план и бюджет'],[-14,'Подготовить покупки и подарки'],[-7,'Проверить готовность'],[-1,'Собрать необходимое'],[0,'Провести праздник']]}};
 function v6addHoliday(){const type=document.getElementById('v6holidaytype').value,name=document.getElementById('v6holidayname').value.trim(),date=document.getElementById('v6holidaydate').value;if(!date||!name){toast('Укажи название и дату');return}const h={id:uid(),type,name,date,created:iso(new Date()),tasks:V6_HOLIDAY_TYPES[type].tasks.map(([offset,t])=>({id:uid(),offset,t,done:0,include:true}))};S.v6.holidays.push(h);save();render();toast('План праздника сформирован — проверь этапы')}
 function v6holidayDue(date,days){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+days);return iso(d)}
@@ -724,8 +685,8 @@ function v6holidayRemove(id){if(!confirm('Удалить план праздни
 function v6filterTasks(){const m=Number(document.getElementById('v6available')?.value||25),cat=document.getElementById('v6focus')?.value||'Все',includeFuture=!!document.getElementById('v6future')?.checked;S.v6.available=m;S.v6.focus=cat;S.v6.includeFuture=includeFuture;save();v6showSuggestions()}
 function v6suggestedTasks(){const cap=Number(S.v6.available)||25,cat=S.v6.focus||'Все',future=!!S.v6.includeFuture;const candidates=S.inbox.filter(x=>!x.done&&(Number(x.minutes)||15)<=cap&&(cat==='Все'||x.category===cat)&&(future||!x.due||x.due<=iso(new Date())));const rank=x=>{let p=x.priority==='срочно'?100:x.priority==='важно'?45:0;if(x.due){const d=dLeft(x.due);p+=d<0?75:d===0?55:d===1?10:0}return p};return candidates.sort((a,b)=>rank(b)-rank(a)||(Number(a.minutes)||15)-(Number(b.minutes)||15)).slice(0,8)}
 function v6showSuggestions(){const el=document.getElementById('v6suggestions');if(!el)return;const items=v6suggestedTasks();el.innerHTML=items.length?items.map(x=>'<div class="v6line"><div class="v6flex"><div><b>'+safe(x.t)+'</b><div class="v6mut">'+safe(x.category||'Личное')+' · '+(Number(x.minutes)||15)+' мин · '+safe(dueLabel(x))+'</div></div><button class="v6btn" onclick="updInbox(\''+x.id+'\',\'done\',1)">✓</button></div></div>').join(''):'<p class="v6mut">Подходящих дел пока нет. Укажи длительность и сроки задач во вкладке «Быстро записать».</p>'}
-function v6assistant(){const draft=S.v6.captureDraft,cat=['Все','Личное','Малышка','Здоровье','Садик','Дом','Покупки','Подарки','Учёба','Академия семьи','Детская афиша','Мама-юрист','Недвижимость'];let out='<section class="v6pane"><h3>🎤 Скажи — я распределю</h3><p class="v6mut">Скажи несколько дел подряд: «завтра купить молоко; в пятницу в 14:00 к педиатру; подготовить пост Академии семьи». Я предложу разделы, даты и время — проверь перед сохранением.</p><div class="v6field"><textarea id="v6speech" aria-label="Дела для распределения" placeholder="Например: в пятницу опубликовать афишу; завтра купить молоко; 25.11 записаться к врачу"></textarea></div><div class="v6field"><button id="v6voicebtn" class="v6btn" onclick="v6voiceStart()">🎤 Продиктовать</button><button class="v6btn primary" onclick="v6captureDraft()">Распределить по разделам</button></div><div id="v6voicestatus" class="v6mut" role="status"></div><p class="v6mut">Распознавание зависит от браузера и разрешения микрофона; некоторые браузеры отправляют аудио своему сервису. Для конфиденциальных записей используй текст.</p></section>';
- if(draft.length){out+='<section class="v6pane"><h3>🧾 Проверь, куда всё попадёт</h3><p class="v6mut">Разделы определены автоматически по словам. Если дата или место не распознаны — исправь прямо здесь.</p>';draft.forEach(x=>out+='<div class="v6draft"><label><input type="checkbox" '+(x.selected?'checked':'')+' onchange="v6draftUpdate(\''+x.id+'\',\'selected\',this.checked)"> Сохранить</label><div class="v6field"><input type="text" value="'+safe(x.t)+'" aria-label="Дело" onchange="v6draftUpdate(\''+x.id+'\',\'t\',this.value)"></div><div class="v6field"><select aria-label="Куда сохранить" onchange="v6draftUpdate(\''+x.id+'\',\'dest\',this.value)">'+VOICE_DEST.map(([id,label])=>'<option value="'+id+'" '+(x.dest===id?'selected':'')+'>'+label+'</option>').join('')+'</select><input type="date" aria-label="Дата" value="'+safe(x.due)+'" onchange="v6draftUpdate(\''+x.id+'\',\'due\',this.value)"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="v6draftUpdate(\''+x.id+'\',\'time\',this.value)"></div><div class="v6field"><label class="v6mut">Сообщество: <select onchange="v6draftUpdate(\''+x.id+'\',\'net\',this.value)">'+VOICE_NETS.map(n=>'<option '+(x.net===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label></div></div>');out+='<button class="v6btn primary" onclick="v6commitDraft()">✓ Разложить выбранное по разделам</button></section>'}
+function v6assistant(){const draft=S.v6.captureDraft,cat=['Все','Личное','Малышка','Здоровье','Садик','Дом','Покупки','Подарки','Учёба','Академия семьи','Детская афиша','Мама-юрист','Недвижимость'];let out='<section class="v6pane"><h3>🎤 Скажи — я распределю</h3><p class="v6mut">Скажи несколько дел подряд: «завтра купить молоко; в пятницу в 14:00 к педиатру; подготовить пост Академии семьи». Я предложу разделы, даты и время — проверь перед сохранением.</p><div class="v6field"><textarea id="v6speech" placeholder="Например: в пятницу опубликовать афишу; завтра купить молоко; 25.11 записаться к врачу"></textarea></div><div class="v6field"><button id="v6voicebtn" class="v6btn" onclick="v6voiceStart()">🎤 Продиктовать</button><button class="v6btn primary" onclick="v6captureDraft()">Распределить по разделам</button></div><p class="v6mut">Распознавание зависит от браузера и разрешения микрофона; некоторые браузеры отправляют аудио своему сервису. Для конфиденциальных записей используй текст.</p></section>';
+ if(draft.length){out+='<section class="v6pane"><h3>🧾 Проверь, куда всё попадёт</h3><p class="v6mut">Разделы определены автоматически по словам. Если дата или место не распознаны — исправь прямо здесь.</p>';draft.forEach(x=>out+='<div class="v6draft"><label><input type="checkbox" '+(x.selected?'checked':'')+' onchange="v6draftUpdate(\''+x.id+'\',\'selected\',this.checked)"> Сохранить</label><div class="v6field"><input type="text" value="'+safe(x.t)+'" aria-label="Дело" onchange="v6draftUpdate(\''+x.id+'\',\'t\',this.value)"></div><div class="v6field"><select aria-label="Куда сохранить" onchange="v6draftUpdate(\''+x.id+'\',\'dest\',this.value)">'+VOICE_DEST.map(([id,label])=>'<option value="'+id+'" '+(x.dest===id?'selected':'')+'>'+label+'</option>').join('')+'</select><input type="date" aria-label="Дата" value="'+safe(x.due)+'" onchange="v6draftUpdate(\''+x.id+'\',\'due\',this.value)"><input type="time" aria-label="Время" value="'+safe(x.time||'')+'" onchange="v6draftUpdate(\''+x.id+'\',\'time\',this.value)"></div>'+(x.timeAmbiguous&&!x.time?'<div class="v6mut" style="color:#a23d2b;font-weight:600">⚠ Уточни время: <select aria-label="Уточнить время" onchange="v6draftUpdate(\''+x.id+'\',\'time\',this.value)"><option value="">Выбери время</option>'+x.timeOptions.map((v,i)=>'<option value="'+v+'">'+(i===0?'Ночью / утром: ':'Днём / вечером: ')+v+'</option>').join('')+'</select></div>':'')+(x.dest==='social'?'<div class="v6field"><label class="v6mut">Сообщество: <select onchange="v6draftUpdate(\''+x.id+'\',\'net\',this.value)"><option value="">Выбери сообщество</option>'+VOICE_NETS.map(n=>'<option '+(x.net===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label></div>':'')+'</div>');out+='<button class="v6btn primary" onclick="v6commitDraft()">✓ Разложить выбранное по разделам</button></section>'}
  out+='<section class="v6pane"><h3>⏱ У меня появилось свободное время</h3><div class="v6field"><label>Сколько минут? <select id="v6available" onchange="v6filterTasks()">'+[5,10,15,25,40,60,90].map(m=>'<option value="'+m+'" '+((Number(S.v6.available)||25)===m?'selected':'')+'>'+m+'</option>').join('')+'</select></label><label>Направление <select id="v6focus" onchange="v6filterTasks()">'+cat.map(c=>'<option '+((S.v6.focus||'Все')===c?'selected':'')+'>'+c+'</option>').join('')+'</select></label><label><input id="v6future" type="checkbox" '+(S.v6.includeFuture?'checked':'')+' onchange="v6filterTasks()"> Включать будущие дела</label></div><div class="v6mut">Подбор из твоих невыполненных задач по сроку, приоритету и примерной длительности. Он не рассчитывает занятость календаря автоматически.</div><div id="v6suggestions"></div></section>';
  out+='<section class="v6pane"><h3>🎁 Автоматическая подготовка праздника</h3><p class="v6mut">Создай план по шаблону, проверь даты этапов, затем перенеси выбранные задачи в ежедневник. Ничего не добавляется без подтверждения.</p><div class="v6field"><select id="v6holidaytype"><option value="birthday">День рождения</option><option value="newyear">Новый год</option><option value="kindergarten">Праздник в садике</option><option value="custom">Другой праздник</option></select><input id="v6holidayname" type="text" placeholder="Кого или что празднуем?"><input id="v6holidaydate" type="date"><button class="v6btn primary" onclick="v6addHoliday()">Составить план</button></div>';
  S.v6.holidays.forEach(h=>{out+='<div class="v6draft"><div class="v6flex"><div><b>'+safe(h.name)+'</b><div class="v6mut">'+safe(nice(h.date))+' · '+safe(V6_HOLIDAY_TYPES[h.type]?.title||'Праздник')+'</div></div><button class="v6btn warn" onclick="v6holidayRemove(\''+h.id+'\')">Удалить</button></div>';h.tasks.forEach(t=>out+='<div class="v6line"><label><input type="checkbox" '+(t.include?'checked':'')+' onchange="v6holidayEdit(\''+h.id+'\',\''+t.id+'\',\'include\',this.checked)"> '+safe(t.t)+'</label><div class="v6mut">'+safe(nice(v6holidayDue(h.date,Number(t.offset))))+' ('+(Number(t.offset)<=0?Math.abs(Number(t.offset))+' дн. до праздника':'после')+')</div></div>');out+='<div class="v6field"><button class="v6btn primary" onclick="v6holidayPublish(\''+h.id+'\')">＋ Добавить выбранные этапы в задачи</button></div></div>'});return out+'</section>'}
@@ -736,8 +697,28 @@ function bellToggle(){S.bell=S.bell?0:1;save();const el=document.getElementById(
 const n0=new Date();document.getElementById('hdrdate').textContent=nice(iso(n0));
 renderTabs();render();document.getElementById('bell').textContent=S.bell?'🔔':'🔕';remind();
 
-// An Android home-screen shortcut has no in-page tap to start recording.
-if(new URLSearchParams(window.location.search).get('voice')==='1')go('assistant');
+// Android home-screen voice shortcut. Launches the same app and local data store.
+(function setupHomeScreenVoiceShortcut(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('voice')!=='1')return;
+  // Open the voice assistant directly. Automatic speech start can be blocked by
+  // Android/browser user-activation policy, so always leave manual start visible.
+  const run=()=>{
+    try {
+      go('assistant');
+      const input=document.getElementById('v6speech');
+      if(input){ input.setAttribute('aria-label','Продиктуй дела или введи текст'); }
+      const speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!speech){toast('Распознавание не поддерживается: можно записать текст');return;}
+      v6voiceStart();
+    } catch(e){
+      console.warn('Voice deep link could not auto-start', e);
+      try{go('assistant');toast('Нажми «🎤 Продиктовать», чтобы начать');}catch(_){}
+    }
+  };
+  // This runs after the original bootstrap, without changing the saved data schema.
+  if(document.readyState==='complete')run();else window.addEventListener('load',run,{once:true});
+})();
 // Offline app shell cache, only available when served from HTTPS/localhost.
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
