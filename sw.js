@@ -1,12 +1,12 @@
 // v2: resilient app-shell pre-cache, fresh-network fallback and offline navigation.
-const CACHE = 'olga-planner-shell-v2';
+const CACHE = 'olga-planner-shell-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest'];
 const OPTIONAL = ['./icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './voice-192.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.add('./index.html');
+    await cache.add(new Request('./index.html', {cache:'reload'}));
     await Promise.allSettled([...SHELL.filter(p => p !== './index.html'), ...OPTIONAL].map(p => cache.add(p)));
     await self.skipWaiting();
   })());
@@ -23,7 +23,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   event.respondWith((async () => {
     try {
-      const response = await fetch(request);
+      const response = await fetch(request, {cache:'no-store'});
       if (response.ok) {
         const cache = await caches.open(CACHE);
         await cache.put(request, response.clone()).catch(() => {});
