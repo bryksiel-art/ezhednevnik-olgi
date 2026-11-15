@@ -119,6 +119,21 @@ function load(){try{const s=JSON.parse(localStorage.getItem(K));return s?Object.
 let S=load();
 function save(){localStorage.setItem(K,JSON.stringify(S))}
 S.savedLinks=(S.savedLinks&&typeof S.savedLinks==='object')?S.savedLinks:{};
+
+const FAMILY_DATES_2026=[{"name":"Дима","date":"2000-11-19","type":"birthday"},{"name":"Максимус","date":"2000-11-28","type":"birthday"},{"name":"Фима","date":"2000-12-16","type":"birthday"},{"name":"Алексей Быстров","date":"2000-01-07","type":"birthday"},{"name":"Свадьба родителей","date":"2000-01-30","type":"anniversary"},{"name":"Брукс","date":"2000-03-12","type":"birthday"},{"name":"Алина Зайцева","date":"2000-03-12","type":"birthday"},{"name":"Ксюша","date":"2000-03-27","type":"birthday"},{"name":"Лена Шпилькова","date":"2000-03-27","type":"birthday"},{"name":"Папа","date":"2000-04-27","type":"birthday"},{"name":"Доченька Алёна","date":"2000-05-03","type":"birthday"},{"name":"Бабушка","date":"2000-05-16","type":"birthday"},{"name":"Дюша","date":"2000-05-24","type":"birthday"},{"name":"Мама","date":"2000-06-21","type":"birthday"},{"name":"Надя","date":"2000-06-26","type":"birthday"},{"name":"Деня","date":"2000-07-01","type":"birthday"},{"name":"Шляхтов Александр Степанович","date":"2000-07-02","type":"birthday"},{"name":"Игорь","date":"2000-07-24","type":"birthday"},{"name":"Саша Колосов","date":"2000-08-08","type":"birthday"},{"name":"Руслан Петров","date":"2000-08-13","type":"birthday"},{"name":"Света","date":"2000-08-16","type":"birthday"},{"name":"Летучев А.А.","date":"2000-08-26","type":"birthday"},{"name":"Оксана Соловьева","date":"2000-09-12","type":"birthday"},{"name":"Веня","date":"2000-09-20","type":"birthday"},{"name":"Катя","date":"2000-09-29","type":"birthday"},{"name":"Даша","date":"2000-10-09","type":"birthday"}];
+function seedFamilyDates2026(){
+ if(!Array.isArray(S.dr))S.dr=[];
+ let changed=false;
+ const norm=v=>(v||'').toString().toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+ FAMILY_DATES_2026.forEach((item,i)=>{
+  const md=item.date.slice(5);
+  if(S.dr.some(x=>norm(x.name)===norm(item.name)&&String(x.date||'').slice(5)===md))return;
+  S.dr.push({id:'familydates-2026-'+String(i+1).padStart(2,'0'),name:item.name,date:item.date,type:item.type});changed=true;
+ });
+ if(changed)save();
+}
+seedFamilyDates2026();
+
 const uid=()=>Date.now()+''+Math.floor(Math.random()*1e4);
 const MON=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const DOW=['вс','пн','вт','ср','чт','пт','сб'];
@@ -251,7 +266,7 @@ function vHome(){
  let dl=[];COURSES.forEach((c,i)=>{if(c.dl){const d=dLeft(c.dl);if(d>=0&&d<=10)dl.push({c:c,d:d})}});
  if(dl.length){out+='<div class="card"><h3>⏳ Дедлайны курсов</h3>';dl.forEach(x=>out+='<div class="digestline"><span class="ic">'+(x.d<=3?'🔴':'⏰')+'</span><div class="'+(x.d<=3?'warnline':'')+'">'+x.c.n+' — осталось '+x.d+' дн. (до '+nice(x.c.dl)+')</div></div>');out+='</div>'}
  const bds=S.dr.map((d,i)=>({i:i,n:d.name,d:nextBD(d.date)})).filter(x=>x.d&&x.d.days<=7).sort((a,b)=>a.d.days-b.d.days);
- if(bds.length){out+='<div class="card"><h3>🎂 Дни рождения</h3>';bds.forEach(b=>out+='<div class="digestline"><span class="ic">'+(b.d.days==0?'🎉':'🎈')+'</span><div>'+b.n+' — '+(b.d.days==0?'<b>СЕГОДНЯ!</b>':'через '+b.d.days+' дн.')+'</div></div>');out+='</div>'}
+ if(bds.length){out+='<div class="card"><h3>🎂 Дни рождения и годовщины</h3>';bds.forEach(b=>out+='<div class="digestline"><span class="ic">'+(b.d.days==0?'🎉':'🎈')+'</span><div>'+b.n+' — '+(b.d.days==0?'<b>СЕГОДНЯ!</b>':'через '+b.d.days+' дн.')+'</div></div>');out+='</div>'}
  out+='<div class="card"><h3>📋 Что ждёт</h3>';
  [['Врачи и записи',o.doc,'go(\'doc\')'],['Покупки/быт',o.buy,'go(\'buy\')'],['Заказы (Ozon/WB)',o.ord,'go(\'buy\')'],['Подарки',o.gift,'go(\'gift\')'],['Звонки',o.call,'go(\'call\')'],['Садик',o.kind,'go(\'kind\')'],['Посты в соцсети',o.soc,'go(\'social\')']].forEach(x=>{if(x[1]>0)out+='<div class="digestline"><span class="ic">☑️</span><div>'+x[0]+': <b>'+x[1]+'</b> <span class="mut" style="cursor:pointer" onclick="'+x[2]+'">открыть →</span></div></div>'});
  out+='<div class="mut" style="margin-top:4px">Всего незакрытых: '+(o.doc+o.buy+o.ord+o.gift+o.call+o.kind+o.soc)+'</div></div>';
@@ -298,8 +313,8 @@ function addSocial(net){const id='soc_'+btoa(unescape(encodeURIComponent(net))).
 /* ===== ДР ===== */
 function vDr(){
  let out='<div class="card"><h3>🎂 Дни рождения</h3><div class="frm"><input type="text" id="dr_n" placeholder="Имя"><input type="date" id="dr_d"><button class="add" onclick="addDr()">＋</button></div><div class="mut">Вводится один раз — дальше напоминает каждый год.</div>';
- const items=S.dr.map((d,i)=>({i:i,n:d.name,d:nextBD(d.date)})).filter(x=>x.d).sort((a,b)=>a.d.days-b.d.days);
- items.forEach(x=>{out+='<div class="row"><div class="txt"><div style="display:flex;gap:8px;align-items:center"><span style="font-size:20px">🎈</span><div style="flex:1"><b>'+esc(x.n)+'</b> — '+nice(iso(x.d.date))+'<div class="mut">'+(x.d.days==0?'🎉 СЕГОДНЯ! Не забудьте поздравить!':x.d.days==1?'завтра!':'через '+x.d.days+' дн.')+'</div></div></div></div><button class="del" onclick="del(\'dr\','+x.i+')">✕</button></div>'});
+ const items=S.dr.map((d,i)=>({i:i,n:d.name,type:d.type||'birthday',d:nextBD(d.date)})).filter(x=>x.d).sort((a,b)=>a.d.days-b.d.days);
+ items.forEach(x=>{out+='<div class="row"><div class="txt"><div style="display:flex;gap:8px;align-items:center"><span style="font-size:20px">'+(x.type==='anniversary'?'💍':'🎈')+'</span><div style="flex:1"><b>'+esc(x.n)+'</b> — '+nice(iso(x.d.date))+'<div class="mut">'+(x.d.days==0?'🎉 СЕГОДНЯ! Не забудьте поздравить!':x.d.days==1?'завтра!':'через '+x.d.days+' дн.')+'</div></div></div></div><button class="del" onclick="del(\'dr\','+x.i+')">✕</button></div>'});
  out+='</div>';
  out+='<div class="card"><h3>💡 Поздравления</h3><div class="mut">Подсказка: в заметках можно хранить любимые поздравления и идеи подарков для каждого — зайдите во вкладку 📝 Заметки.</div></div>';
  return out}
@@ -445,7 +460,7 @@ function remind(){
  });
  const spouse=spouseNext();
  if(spouse&&[7,3,1,0].includes(spouse.days))notify('spouse|'+spouse.days,spouse.days===0?'Сегодня день рождения супруга!':'До дня рождения супруга '+spouse.days+' дн.');
- S.dr.forEach(x=>{const b=nextBD(x.date);if(b&&[7,3,1,0].includes(b.days))notify('birthday|'+x.id+'|'+b.days,(b.days===0?'Сегодня ДР: ':'Скоро ДР: ')+x.name)});
+ S.dr.forEach(x=>{const b=nextBD(x.date);if(b&&[7,3,1,0].includes(b.days))notify('birthday|'+x.id+'|'+b.days,(x.type==='anniversary'?(b.days===0?'Сегодня годовщина: ':'Скоро годовщина: '):(b.days===0?'Сегодня ДР: ':'Скоро ДР: '))+x.name)});
  const due=S.inbox.filter(x=>!x.done&&x.due===day&&x.priority==='срочно');
  if(due.length)notify('urgent','Срочных задач сегодня: '+due.length);
  if(msgs.length)showReminderNotice(msgs);
@@ -568,7 +583,7 @@ function pickDay(ds){let out='<h3>'+safe(nice(ds))+'</h3>',count=0;
  EVENTS.forEach((e,i)=>{if(e[0]===ds){count++;out+='<div class="qitem">🎓 '+safe(e[1]||'весь день')+' — '+safe(e[3])+' '+linkButton(linkKeyEvent(i))+'</div>'}});
  S.custom.filter(e=>e.date===ds).forEach(e=>{count++;out+='<div class="qitem">📌 '+safe(e.time||'')+' '+safe(e.title)+'</div>'});
  S.docs.filter(x=>x.date===ds&&!x.done).forEach(x=>{count++;out+='<div class="qitem">🩺 '+safe(x.time||'')+' '+safe(x.t)+'</div>'});
- S.dr.forEach(x=>{const b=nextBD(x.date);if(b&&iso(b.date)===ds){count++;out+='<div>🎂 '+safe(x.name)+'</div>'}});
+ S.dr.forEach(x=>{const b=nextBD(x.date);if(b&&iso(b.date)===ds){count++;out+='<div>'+(x.type==='anniversary'?'💍':'🎂')+' '+safe(x.name)+'</div>'}});
  document.getElementById('dayinfo').innerHTML=out+(count?'':'<div class="mut">Нет записей.</div>');
 }
 function digestText(){const n=new Date();let out='Ежедневник — '+nice(iso(n));const appointments=todayEvents();out+='\n\nСЕГОДНЯ:';
