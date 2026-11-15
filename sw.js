@@ -1,5 +1,5 @@
 // v2: resilient app-shell pre-cache, fresh-network fallback and offline navigation.
-const CACHE = 'olga-planner-shell-v5';
+const CACHE = 'olga-planner-shell-v6';
 const SHELL = ['./', './index.html', './manifest.webmanifest'];
 const OPTIONAL = ['./icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './voice-192.png'];
 
