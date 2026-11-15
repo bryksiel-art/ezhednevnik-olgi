@@ -231,6 +231,26 @@ const SOCIAL={
 function seed(){if(S.seeded)return;S.seeded=1;save()}
 seed();
 
+/* Cross-section agenda: render the same stored records in Calendar, Week and Today. */
+function agendaItemsFor(ds){
+ const rows=[];
+ const add=(icon,title,section,detail)=>rows.push({icon,title:String(title||''),section,detail:String(detail||'')});
+ (S.inbox||[]).filter(x=>!x.done&&x.due===ds).forEach(x=>add('☑️',x.t,'inbox',x.category||'Задачи'));
+ (S.docs||[]).filter(x=>!x.done&&x.date===ds).forEach(x=>add(x.type==='Красота'?'💅':'🩺',x.t,x.type==='Красота'?'beauty':'doc',x.time||''));
+ (S.custom||[]).filter(x=>x.date===ds).forEach(x=>add(/^💅/.test(x.title||'')?'💅':'📍',x.title,/^💅/.test(x.title||'')?'beauty':'cal',x.time||''));
+ (S.kind||[]).filter(x=>!x.done&&x.date===ds).forEach(x=>add('👧',x.t,'kind',''));
+ (S.calls||[]).filter(x=>!x.done&&x.date===ds).forEach(x=>add('📞',x.t,'call',''));
+ (S.orders||[]).filter(x=>!x.done&&x.delivery===ds).forEach(x=>add('📦',x.t,'buy',x.st||''));
+ (S.social||[]).filter(x=>!x.done&&x.publishDate===ds).forEach(x=>add('📣',x.t,'social',x.net||''));
+ (S.routines||[]).filter(x=>v5dueRoutine(x,ds)&&!(x.completed||[]).includes(ds)).forEach(x=>add('🔁',x.t,'routines','повтор'));
+ (S.dr||[]).forEach(x=>{if(String(x.date||'').slice(5)===ds.slice(5))add(x.type==='anniversary'?'💍':'🎂',x.name,'dr','ежегодно')});
+ const spouseDate=S.fam&&S.fam.spouse;
+ if(spouseDate&&String(spouseDate).slice(5)===ds.slice(5)&&!rows.some(x=>x.section==='dr'&&/максимус|муж/i.test(x.title)))add('🎂','День рождения мужа','fest','ежегодно');
+ return rows;
+}
+function agendaItemsHtml(ds){
+ return agendaItemsFor(ds).map(x=>'<div class="qitem">'+x.icon+' '+safe(x.title)+(x.detail?' <span class="mut">· '+safe(x.detail)+'</span>':'')+' <button class="mini" onclick="go(\''+x.section+'\')">Раздел →</button></div>').join('');
+}
 /* ===== TABS ===== */
 const TABS=[['home','🏠','Мой день'],['week','🗓️','Неделя'],['routines','🔁','Рутины'],['assistant','✨','Помощник'],['inbox','⚡','Быстро записать'],['cal','📅','Календарь'],['courses','🎓','Курсы'],['social','📣','Соцсети'],['dr','🎂','ДР'],['doc','🩺','Врачи и записи'],['beauty','💅','Красота и уход'],['kind','👧','Садик'],['buy','🛍','Покупки'],['food','🥦','Продукты'],['gift','🎁','Подарки'],['fest','🎄','Праздники'],['estate','🏡','Недвижимость'],['call','📞','Звонки'],['notes','📝','Заметки'],['settings','💾','Мои данные']];
 let cur='home';
@@ -289,9 +309,9 @@ function vCal(){
  out+='<div class="grid"><div class="dow">пн</div><div class="dow">вт</div><div class="dow">ср</div><div class="dow">чт</div><div class="dow">пт</div><div class="dow">сб</div><div class="dow">вс</div>';
  for(let i=0;i<shift;i++)out+='<div class="day"></div>';
  for(let d=1;d<=dim;d++){const ds=calY+'-'+('0'+(calM+1)).slice(-2)+'-'+('0'+d).slice(-2);
-  const hasEv=EVENTS.some(e=>e[0]==ds)||S.custom.some(e=>e.date==ds);
-  const hasBd=S.dr.some(x=>{const n=nextBD(x.date);return n&&iso(n.date)==ds});
-  const hasDoc=S.docs.some(x=>x.date==ds&&!x.done);
+  const hasEv=EVENTS.some(e=>e[0]===ds)||agendaItemsFor(ds).some(x=>!['dr','doc','beauty'].includes(x.section));
+  const hasBd=agendaItemsFor(ds).some(x=>x.section==='dr'||x.section==='fest');
+  const hasDoc=agendaItemsFor(ds).some(x=>x.section==='doc'||x.section==='beauty');
   let cls='day';if(hasEv)cls+=' ev';if(hasBd)cls+=' bd';if(hasDoc)cls+=' doc';
   if(ds==iso(new Date()))cls+=' today';
   out+='<div class="'+cls+'" onclick="pickDay(\''+ds+'\')">'+d+'<span class="dots">'+(hasEv?'<i style="background:#e8794a"></i>':'')+(hasBd?'<i style="background:#d96a9b"></i>':'')+(hasDoc?'<i style="background:#5b8bd0"></i>':'')+'</span></div>'}
@@ -405,7 +425,7 @@ function vFest(){
  S.ny=Array.isArray(S.ny)?S.ny:NY.map(t=>({id:uid(),t:t,done:0}));
  S.ny.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="togNy('+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="editNy('+i+',this.value)"></div><button class="del" onclick="delNy('+i+')">✕</button></div>'});
  out+='<div class="frm"><input type="text" id="ny_t" placeholder="Добавить пункт"><button class="add" onclick="addNy()">＋</button></div></div>';
- out+='<div class="card"><h3>🎂 День рождения мужа</h3><div class="frm"><input type="date" id="hs_d" value="'+esc(S.fam.spouse||'')+'"><button class="add" onclick="setSpouse()">💾</button></div>'+(S.fam.spouse?'<div class="mut">Напомню в дайджесте за неделю до ('+nice(S.fam.spouse)+')</div>':'<div class="mut">Поставьте дату — напомню в дайджесте за неделю.</div>');
+ out+='<div class="card"><h3>🎂 День рождения мужа</h3><div class="frm"><input type="date" id="hs_d" value="'+esc((S.fam&&S.fam.spouse)||((S.dr||[]).find(x=>/^(Максимус|муж)$/i.test(x.name||''))||{}).date||'')+'"><button class="add" onclick="setSpouse()">💾</button></div>'+(spouseNext()?'<div class="mut">Дата связана с разделом «Дни рождения». Ближайшая дата: '+nice(iso(spouseNext().date))+'</div>':'<div class="mut">Поставьте дату — напомню в дайджесте за неделю.</div>');
  S.hs=Array.isArray(S.hs)?S.hs:HUSB.map(t=>({id:uid(),t:t,done:0}));
  S.hs.forEach((x,i)=>{out+='<div class="row'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' onchange="togHs('+i+')"><div class="txt"><input value="'+esc(x.t)+'" onchange="editHs('+i+',this.value)"></div><button class="del" onclick="delHs('+i+')">✕</button></div>'});
  out+='<div class="frm"><input type="text" id="hs_t" placeholder="Добавить пункт"><button class="add" onclick="addHs()">＋</button></div></div>';
@@ -417,7 +437,7 @@ function togNy(i){S.ny[i].done=S.ny[i].done?0:1;save();render()}
 function editNy(i,v){S.ny[i].t=v;save()}
 function delNy(i){S.ny.splice(i,1);save();render()}
 function addNy(){const v=document.getElementById('ny_t').value.trim();if(!v)return;S.ny.push({id:uid(),t:v,done:0});save();render()}
-function setSpouse(){S.fam.spouse=document.getElementById('hs_d').value;save();render();toast('Дата сохранена')}
+function setSpouse(){const d=document.getElementById('hs_d').value;S.fam.spouse=d;const match=(S.dr||[]).find(x=>/^(Максимус|муж)$/i.test(x.name||''));if(match&&d)match.date=d;else if(d)S.dr.push({id:uid(),name:'Муж',date:d,type:'birthday'});save();render();toast('Дата сохранена в праздниках и днях рождения')}
 function togHs(i){S.hs[i].done=S.hs[i].done?0:1;save();render()}
 function editHs(i,v){S.hs[i].t=v;save()}
 function delHs(i){S.hs.splice(i,1);save();render()}
@@ -474,7 +494,7 @@ function showReminderNotice(messages){
  if(!panel){panel=document.createElement('div');panel.id='reminderPanel';panel.style.cssText='position:fixed;z-index:100;right:12px;bottom:12px;max-width:min(380px,calc(100vw - 24px));background:white;border:1px solid #e4d8c7;border-radius:14px;box-shadow:0 8px 30px #0002;padding:12px 14px;font-size:14px';document.body.appendChild(panel)}
  panel.innerHTML='<b>🔔 Напоминания</b><button style="float:right;border:none;background:none;font-size:19px;cursor:pointer" onclick="this.parentNode.remove()" aria-label="Закрыть">×</button>'+messages.map(x=>'<div style="margin-top:8px">'+safe(x)+'</div>').join('');
 }
-function spouseNext(){return S.fam&&S.fam.spouse?nextBD(S.fam.spouse):null}
+function spouseNext(){const stored=S.fam&&S.fam.spouse;const matching=(S.dr||[]).find(x=>/^(Максимус|муж)$/i.test(x.name||''));return nextBD(stored||(matching&&matching.date)||'')}
 remind._seen={};
 setInterval(remind,60000);
 
@@ -557,8 +577,8 @@ function vHomePlus(){
  out+=priority.slice(0,7).map(x=>'<div class="qitem"><label><input type="checkbox" onchange="updInbox(\''+x.id+'\',\'done\',this.checked?1:0)"> <b>'+safe(x.t)+'</b></label><div class="section-hint">'+safe(x.category)+' · '+safe(dueLabel(x))+' · '+safe(x.priority)+'</div></div>').join('')||'<div class="mut">Нет срочных задач: можно выбрать дело из общего списка.</div>';
  out+='</div>';
  if(overdue.length)out+='<div class="card"><h3 class="danger">↪ Перенос незавершённых дел: '+overdue.length+'</h3><p class="mut">Они не пропадают и остаются на главном экране. Первоначальный срок сохраняется при переносе.</p><button class="btn" onclick="moveOverdueToToday()">Перенести все на сегодня</button> <button class="btn" onclick="go(\'inbox\')">По одному</button></div>';
- out+='<div class="card"><h3>📅 Сегодня ('+meetings.length+')</h3>';
- meetings.forEach(e=>out+='<div class="digestline"><b>'+safe(e[1]||'весь день')+'</b> — '+safe(e[3])+'</div>');if(!meetings.length)out+='<div class="mut">Мероприятий нет.</div>';out+='</div>';
+ const crossToday=agendaItemsFor(today);out+='<div class="card"><h3>📅 Сегодня ('+(meetings.length+crossToday.length)+')</h3>';
+ meetings.forEach(e=>out+='<div class="digestline"><b>'+safe(e[1]||'весь день')+'</b> — '+safe(e[3])+'</div>');out+=agendaItemsHtml(today);if(!meetings.length&&!crossToday.length)out+='<div class="mut">Мероприятий нет.</div>';out+='</div>';
  const links=EVENTS.map((e,i)=>({e,i})).filter(({e,i})=>e[0]===today&&resolvedEventLink(i));
  if(links.length)out+='<div class="card"><h3>🔗 Подключиться сегодня</h3>'+links.map(({e,i})=>'<div class="qitem">'+safe(e[3])+' '+eventLinkButton(i)+'</div>').join('')+'</div>';
  if(spouse&&spouse.days<=30)out+='<div class="card"><h3>🎂 День рождения супруга</h3><p>'+safe(nice(iso(spouse.date)))+' — через '+spouse.days+' дн.</p><button class="btn" onclick="go(\'fest\')">Подготовка</button></div>';
@@ -633,9 +653,7 @@ function vCourses(){let out='<div class="card"><h3>🎓 Мои курсы</h3><p
 let selectedCalendarDay='';
 function pickDay(ds){selectedCalendarDay=ds;let out='<h3>'+safe(nice(ds))+'</h3>',count=0;
  EVENTS.forEach((e,i)=>{if(e[0]===ds){count++;out+='<div class="qitem"><b>🎓 '+safe(e[3])+'</b> <span class="mut">'+safe(e[4]||'')+'</span><div class="meta"><label>Дата <input type="date" value="'+safe(e[0])+'" onchange="setScheduledEvent('+i+',0,this.value)"></label><label>Начало <input type="time" value="'+safe(e[1])+'" onchange="setScheduledEvent('+i+',1,this.value)"></label><label>Конец <input type="time" value="'+safe(e[2])+'" onchange="setScheduledEvent('+i+',2,this.value)"></label></div><details class="mut"><summary>✏️ Изменить название или место</summary><input aria-label="Название" value="'+safe(e[3])+'" onchange="setScheduledEvent('+i+',3,this.value)"><input aria-label="Место" value="'+safe(e[4])+'" onchange="setScheduledEvent('+i+',4,this.value)"></details>'+eventLinkEditor(i)+'</div>'}});
- S.custom.filter(e=>e.date===ds).forEach(e=>{count++;out+='<div class="qitem">📌 '+safe(e.time||'')+' '+safe(e.title)+'</div>'});
- S.docs.filter(x=>x.date===ds&&!x.done).forEach(x=>{count++;out+='<div class="qitem">🩺 '+safe(x.time||'')+' '+safe(x.t)+'</div>'});
- S.dr.forEach(x=>{const b=nextBD(x.date);if(b&&iso(b.date)===ds){count++;out+='<div>'+(x.type==='anniversary'?'💍':'🎂')+' '+safe(x.name)+'</div>'}});
+ const extras=agendaItemsFor(ds);count+=extras.length;out+=agendaItemsHtml(ds);
  document.getElementById('dayinfo').innerHTML=out+(count?'':'<div class="mut">Нет записей.</div>');
 }
 function digestText(){const n=new Date();let out='Ежедневник — '+nice(iso(n));const appointments=todayEvents();out+='\n\nСЕГОДНЯ:';
@@ -684,8 +702,8 @@ function v5addRecipe(){const name=document.getElementById('v5recipeName').value.
 function v5missingIngredients(days){const home=S.groceries.filter(x=>x.done).map(x=>(x.t||'').toLowerCase());const already=S.groceries.filter(x=>!x.done).map(x=>(x.t||'').toLowerCase());const proposed=new Map();days.forEach(ds=>{const r=v5recipes().find(x=>x.n===S.mealPlan[ds]);if(!r)return;r.i.forEach(i=>{const ing=i.toLowerCase();if(!home.some(h=>h.includes(ing)||ing.includes(h))&&!already.some(h=>h.includes(ing)||ing.includes(h)))proposed.set(ing,ing)})});return [...proposed.values()]}
 function v5addMealShopping(){const days=Array.from({length:7},(_,i)=>v5dayISO(i));const missing=v5missingIngredients(days);missing.forEach(t=>S.groceries.push({id:uid(),done:0,t}));save();render();toast('Добавлено продуктов: '+missing.length)}
 function v5week(){const days=Array.from({length:7},(_,i)=>v5dayISO(i));let out='<div class="card"><h3>🗓️ Ближайшие семь дней</h3><div class="v5hint">Здесь вместе видны встречи, врач, задачи, меню и повторяющиеся дела. Никаких придуманных записей — только сохранённые данные.</div></div><div class="v5week">';
- days.forEach(ds=>{const ev=EVENTS.map((e,i)=>({e,i})).filter(x=>x.e[0]===ds).map(({e,i})=>(e[1]||'')+' '+e[3]).concat(S.custom.filter(e=>e.date===ds).map(e=>(e.time||'')+' '+e.title));const docs=S.docs.filter(x=>!x.done&&x.date===ds).map(x=>(x.time||'')+' '+x.t);const tasks=S.inbox.filter(x=>!x.done&&x.due===ds).map(x=>x.t);const posts=S.social.filter(x=>!x.done&&x.publishDate===ds).map(x=>'📣 '+x.net+': '+x.t);const routines=v5routinesFor(ds).map(x=>'↻ '+x.t);out+='<div class="v5day"><b>'+safe(v5dayOfWeek(ds))+' · '+safe(nice(ds))+'</b>';
- [...ev.map(x=>'📅 '+x),...docs.map(x=>'🩺 '+x),...tasks.map(x=>'☑ '+x),...posts,...routines].forEach(x=>out+='<div class="v5cardline">'+safe(x)+'</div>');EVENTS.forEach((e,i)=>{if(e[0]===ds&&resolvedEventLink(i))out+='<div style="margin:6px 0">'+eventLinkButton(i)+'</div>'});out+='<div class="v5field"><label style="width:100%;font-size:12px">🍽️ Что приготовить</label><select aria-label="Меню на '+safe(ds)+'" onchange="v5setMeal(\''+ds+'\',this.value)">'+v5mealOptions(S.mealPlan[ds])+'</select></div></div>'});out+='</div>';
+ days.forEach(ds=>{const ev=EVENTS.map((e,i)=>({e,i})).filter(x=>x.e[0]===ds).map(({e,i})=>(e[1]||'')+' '+e[3]).concat(S.custom.filter(e=>e.date===ds).map(e=>(e.time||'')+' '+e.title));const extras=agendaItemsFor(ds);out+='<div class="v5day"><b>'+safe(v5dayOfWeek(ds))+' · '+safe(nice(ds))+'</b>';
+ ev.forEach(x=>out+='<div class="v5cardline">📅 '+safe(x)+'</div>');extras.forEach(x=>out+='<div class="v5cardline">'+x.icon+' '+safe(x.title)+(x.detail?' <span class="mut">· '+safe(x.detail)+'</span>':'')+'</div>');EVENTS.forEach((e,i)=>{if(e[0]===ds&&resolvedEventLink(i))out+='<div style="margin:6px 0">'+eventLinkButton(i)+'</div>'});out+='<div class="v5field"><label style="width:100%;font-size:12px">🍽️ Что приготовить</label><select aria-label="Меню на '+safe(ds)+'" onchange="v5setMeal(\''+ds+'\',this.value)">'+v5mealOptions(S.mealPlan[ds])+'</select></div></div>'});out+='</div>';
  const missing=v5missingIngredients(days);out+='<div class="card"><h3>🛒 Недостающие продукты для меню</h3>'+(missing.length?'<p>'+missing.map(safe).join(', ')+'</p><button class="btn g" onclick="v5addMealShopping()">＋ Добавить недостающее в покупки</button>':'<p class="mut">Выбери блюда на неделю. Если ингредиенты уже дома или в списке покупок, они не дублируются.</p>')+'</div>';
  out+='<div class="card"><h3>📒 Свой рецепт</h3><div class="v5field"><input id="v5recipeName" placeholder="Название блюда"><input id="v5recipeIngredients" placeholder="Ингредиенты через запятую"><button class="btn" onclick="v5addRecipe()">Сохранить рецепт</button></div><p class="mut">Количество продуктов пока не рассчитывается автоматически. Рецепты сохраняются локально.</p></div>';return out;
 }
