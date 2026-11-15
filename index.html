@@ -159,15 +159,15 @@ const EVENTS=[
 const COURSES=[
 {n:'Как предотвратить насилие, травлю и кибербуллинг в школе — базовый',o:'EduHub',dl:'2026-12-04',c:'9 ак. ч, после завершения',s:['Модуль 1','Модуль 2','Модуль 3','Модуль 4','Финальный тест']},
 {n:'Что нужно знать о подростках. Курс для родителей — базовый',o:'EduHub',dl:'2026-12-04',c:'9 ак. ч, после завершения',s:['Модуль 1','Модуль 2','Модуль 3','Модуль 4','Финальный тест']},
-{n:'Продвижение в социальных сетях',o:'Техноград / МТС Линк',dl:'2026-12-14',completed:true,c:'после уроков и тестов, 3–4 недели на почту',s:['Модуль 1: продвижение','Модуль 2: контент','Модуль 3: партнёры','Модуль 4: таргет','Модуль 5: аналитика','Тесты']},
-{n:'Нейросети и личный бренд: от распаковки к развитию',o:'Техноград / МТС Линк',dl:'2026-11-29',c:'активное участие + уроки и тесты',s:['Урок 1','Урок 2','Урок 3','Урок 4','Урок 5','Участие в чате']},
-{n:'Бесплатные нейросети для блога ВКонтакте',o:'Техноград / МТС Линк',dl:'2026-11-29',c:'после успешного прохождения',s:['Видеоурок 1','Видеоурок 2','Вебинар 1','Вебинар 2','Практика']},
-{n:'Практика разрешения конфликтов. Я-семья-работа-общество',o:'ТГУ',dl:'',c:'условия не указаны',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
-{n:'Психология призвания',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
-{n:'ИИ-трансформация: эффективные решения для преподавателя',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
-{n:'Геймификация в бизнесе и образовании',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
-{n:'Арт-менеджмент: концепция и запуск проекта',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
-{n:'Маркетинг для стартапа: от исследований до клиентов',o:'ТГУ',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']}];
+{n:'Продвижение в социальных сетях',o:'Техноград / МТС Линк',url:'https://my.mts-link.ru/course-info/2097617',dl:'2026-12-14',completed:true,c:'после уроков и тестов, 3–4 недели на почту',s:['Модуль 1: продвижение','Модуль 2: контент','Модуль 3: партнёры','Модуль 4: таргет','Модуль 5: аналитика','Тесты']},
+{n:'Нейросети и личный бренд: от распаковки к развитию',o:'Техноград / МТС Линк',url:'https://my.mts-link.ru/course-info/2300061',dl:'2026-11-29',c:'активное участие + уроки и тесты',s:['Урок 1','Урок 2','Урок 3','Урок 4','Урок 5','Участие в чате']},
+{n:'Бесплатные нейросети для блога ВКонтакте',o:'Техноград / МТС Линк',url:'https://my.mts-link.ru/course-info/2151895',dl:'2026-11-29',c:'после успешного прохождения',s:['Видеоурок 1','Видеоурок 2','Вебинар 1','Вебинар 2','Практика']},
+{n:'Практика разрешения конфликтов. Я-семья-работа-общество',o:'ТГУ',url:'https://lk.flow-crm.study/',dl:'',c:'условия не указаны',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Психология призвания',o:'ТГУ',url:'https://lk.flow-crm.study/',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'ИИ-трансформация: эффективные решения для преподавателя',o:'ТГУ',url:'https://lk.flow-crm.study/',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Геймификация в бизнесе и образовании',o:'ТГУ',url:'https://lk.flow-crm.study/',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Арт-менеджмент: концепция и запуск проекта',o:'ТГУ',url:'https://lk.flow-crm.study/',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']},
+{n:'Маркетинг для стартапа: от исследований до клиентов',o:'ТГУ',url:'https://lk.flow-crm.study/',dl:'',c:'',s:['Уточнить зачисление','Модуль 1','Модуль 2','Модуль 3']}];
 
 const RECIPES=[
 {n:'Курица с картошкой в духовке (малышка ест со сметаной)',i:['курица','картошка','сметана','чеснок']},
@@ -523,8 +523,26 @@ function persistCourseDefinitions(){S.courseDefinitions=COURSES.map(c=>({n:c.n,s
 function renStep(ci,si,value){const c=COURSES[ci];if(!c||!c.s[si])return;c.s[si]=value;persistCourseDefinitions()}
 function addStep(ci){const c=COURSES[ci],el=document.getElementById('cs'+ci);if(!c||!el||!el.value.trim())return;c.s.push(el.value.trim());if(!Array.isArray(S.steps[c.n]))S.steps[c.n]=[];S.steps[c.n].push(0);persistCourseDefinitions();render()}
 function deleteStep(ci,si){const c=COURSES[ci];if(!c||si<0||si>=c.s.length)return;c.s.splice(si,1);if(!Array.isArray(S.steps[c.n]))S.steps[c.n]=[];S.steps[c.n].splice(si,1);persistCourseDefinitions();render()}
-function vCourses(){let out='<div class="card"><h3>🎓 Курсы и ссылки</h3><div class="mut">Адрес учебного кабинета можно сохранить под курсом. Не сохраняй пароль.</div></div>';
- COURSES.forEach((c,ci)=>{if(!S.steps[c.n])S.steps[c.n]=c.s.map(()=>0);const progress=S.steps[c.n],done=progress.filter(Boolean).length;out+='<div class="card"><h3>'+safe(c.n)+'</h3>'+(c.completed?'<div class="tag" style="display:inline-block;margin:3px 0 7px;background:#e3f4e6;color:#265c34;font-weight:700">✅ Курс пройден</div>':'')+'<div class="mut">'+safe(c.o)+'</div>'+(c.dl&&!c.completed?'<div class="mut">'+(dLeft(c.dl)<0?'Срок прошёл':'До '+nice(c.dl))+'</div>':'')+linkEditor(linkKeyCourse(ci),'link_course_'+ci)+'<div class="prog"><i style="width:'+(100*done/Math.max(1,c.s.length))+'%"></i></div><div class="mut">'+done+' из '+c.s.length+'</div>';
+
+// Important training follow-ups are added only if the user has not already saved similar tasks.
+function ensureTrainingFollowups(){
+ if(!Array.isArray(S.inbox))return;
+ const hasCert=S.inbox.some(x=>/сертификат/i.test(x.t||'')&&/продвижени|соцсет/i.test(x.t||''));
+ const hasTsu=S.inbox.some(x=>/тгу|томск|университет/i.test(x.t||'')&&/оригинал|заказн.*письм|документ/i.test(x.t||''));
+ let modified=false;
+ if(!hasCert){
+  S.inbox.push({id:'followup-social-certificate-2026',t:'Проверить получение сертификата за курс «Продвижение в социальных сетях» в электронной почте (после успешного завершения уроков и тестов; отправка в течение 3–4 недель). Если сертификат не поступил — обратиться к организаторам.',done:0,due:'2026-12-13',category:'Учёба',priority:'важно',minutes:15,added:'2026-11-15'});
+  modified=true;
+ }
+ if(!hasTsu){
+  S.inbox.push({id:'followup-tsu-originals-2026',t:'Отправить подписанные оригиналы документов в ТГУ заказным письмом. Адрес: 634050, Томская область, г. Томск, проспект Ленина, д. 36. Получатель: ФГАОУ ВО «Национальный исследовательский Томский государственный университет».',done:0,due:'',category:'Учёба',priority:'важно',minutes:30,added:'2026-11-15'});
+  modified=true;
+ }
+ if(modified)save();
+}
+ensureTrainingFollowups();
+function vCourses(){let out='<div class="card"><h3>🎓 Курсы и ссылки</h3><div class="mut">Ссылки на курсы доступны сразу. Персональные ссылки и пароли не публикуй.</div></div>';
+ COURSES.forEach((c,ci)=>{if(!S.steps[c.n])S.steps[c.n]=c.s.map(()=>0);const progress=S.steps[c.n],done=progress.filter(Boolean).length;out+='<div class="card"><h3>'+safe(c.n)+'</h3>'+(c.completed?'<div class="tag" style="display:inline-block;margin:3px 0 7px;background:#e3f4e6;color:#265c34;font-weight:700">✅ Курс пройден</div>':'')+'<div class="mut">'+safe(c.o)+'</div>'+(c.url?'<div style="margin:9px 0"><a class="btn g" href="'+safe(c.url)+'" target="_blank" rel="noopener noreferrer">↗ '+(c.o==='ТГУ'?'Личный кабинет ТГУ':'Открыть курс МТС Линк')+'</a></div>':'')+(c.dl&&!c.completed?'<div class="mut">'+(dLeft(c.dl)<0?'Срок прошёл':'До '+nice(c.dl))+'</div>':'')+linkEditor(linkKeyCourse(ci),'link_course_'+ci)+'<div class="prog"><i style="width:'+(100*done/Math.max(1,c.s.length))+'%"></i></div><div class="mut">'+done+' из '+c.s.length+'</div>';
  c.s.forEach((st,si)=>out+='<div class="row"><input type="checkbox" '+(progress[si]?'checked':'')+' onchange="toggleSteps('+ci+','+si+')"><div class="txt"><input value="'+safe(st)+'" onchange="renStep('+ci+','+si+',this.value)"></div><button class="del" onclick="deleteStep('+ci+','+si+')">✕</button></div>');
  out+='<div class="frm"><input id="cs'+ci+'" placeholder="Новый шаг"><button class="add" onclick="addStep('+ci+')">＋</button></div></div>'});return out;
 }
